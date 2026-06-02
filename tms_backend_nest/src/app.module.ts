@@ -14,7 +14,8 @@ import { HealthModule } from './health/health.module';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-
+import { ProjectsModule } from './modules/projects/projects.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -32,6 +33,8 @@ import { UsersModule } from './modules/users/users.module';
     AuthModule,
 
     UsersModule,
+    ProjectsModule,
+    TasksModule,
   ],
 })
 export class AppModule {}
