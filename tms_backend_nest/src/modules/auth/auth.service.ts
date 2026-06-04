@@ -40,8 +40,9 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    console.log('login dto', dto);
     const user = await this.usersService.findByEmail(dto.email);
-
+    console.log('user', user);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -64,9 +65,14 @@ export class AuthService {
       email: user.email,
       role: user.role,
     };
+    console.log('before sign');
 
-    const accessToken = await this.jwtService.signAsync(payload);
-
+    console.log('payload', payload);
+    console.log('secret', process.env.JWT_SECRET);
+    const accessToken = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_SECRET,
+    });
+    console.log('after sign');
     return {
       accessToken,
 
