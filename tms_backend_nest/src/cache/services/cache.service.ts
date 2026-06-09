@@ -1,6 +1,6 @@
-import { Injectable, Inject, InjectionToken } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import type { Cache } from 'cache-manager';
 
 /**
  * Cache service wrapper for Redis-based caching
@@ -8,13 +8,13 @@ import { Cache } from 'cache-manager';
 @Injectable()
 export class CacheService {
   constructor(
-    @Inject(CACHE_MANAGER as unknown as InjectionToken)
+    @Inject(CACHE_MANAGER)
     private cacheManager: Cache,
   ) {}
 
   async get<T>(key: string): Promise<T | undefined> {
     const value = await this.cacheManager.get<T>(key);
-    return value as T | undefined;
+    return value;
   }
 
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
@@ -26,7 +26,7 @@ export class CacheService {
   }
 
   async reset(): Promise<void> {
-    await this.cacheManager.reset();
+    await this.cacheManager.clear();
   }
 
   async has(key: string): Promise<boolean> {

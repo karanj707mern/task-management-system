@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { ROUTES } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from './ui/Button';
+import { Button } from '@/components/ui/Button';
 
 /**
  * Header/Navigation component
@@ -38,7 +38,7 @@ export function Header() {
           {isAuthenticated ? (
             <>
               <span className="text-sm text-gray-600">
-                {user?.firstName} {user?.lastName}
+                {user?.name}
               </span>
               <Button
                 variant="ghost"

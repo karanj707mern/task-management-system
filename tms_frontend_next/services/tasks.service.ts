@@ -9,7 +9,7 @@ export interface TaskFilters {
   limit?: number;
   projectId?: string;
   status?: TaskStatus;
-  assignedTo?: string;
+  assigneeId?: string;
 }
 
 /**

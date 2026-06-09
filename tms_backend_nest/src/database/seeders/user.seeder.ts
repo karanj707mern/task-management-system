@@ -48,7 +48,7 @@ export class UserSeeder {
 
       this.logger.log('User seeding completed');
     } catch (error) {
-      this.logger.error('Error seeding users', error.message);
+      this.logger.error('Error seeding users', error as string);
       throw error;
     }
   }

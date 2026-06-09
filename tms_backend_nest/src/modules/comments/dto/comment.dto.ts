@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsString, IsUUID } from 'class-validator';
 
 /**
  * Create comment DTO
@@ -6,11 +6,11 @@ import { IsNotEmpty, IsString, IsOptional, IsUUID } from 'class-validator';
 export class CreateCommentDto {
   @IsNotEmpty()
   @IsString()
-  content: string;
+  content!: string;
 
   @IsNotEmpty()
   @IsUUID()
-  taskId: string;
+  taskId!: string;
 }
 
 /**
@@ -19,5 +19,5 @@ export class CreateCommentDto {
 export class UpdateCommentDto {
   @IsNotEmpty()
   @IsString()
-  content: string;
+  content!: string;
 }

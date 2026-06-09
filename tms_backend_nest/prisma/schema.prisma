@@ -7,14 +7,18 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      UserRole @default(EMPLOYEE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  tasks     Task[]
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  name          String
+  role          UserRole       @default(EMPLOYEE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  tasks         Task[]
+  comments      Comment[]
+  activities    Activity[]
+  teamMembers   TeamMember[]
+  notifications Notification[]
 }
 
 model Project {
@@ -37,16 +41,90 @@ model Task {
   updatedAt   DateTime   @updatedAt
   assignee    User       @relation(fields: [assigneeId], references: [id])
   project     Project    @relation(fields: [projectId], references: [id])
+  comments    Comment[]
+  activities  Activity[]
 
   @@index([assigneeId])
   @@index([projectId])
   @@index([status])
 }
 
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  taskId    String
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id])
+
+  @@index([taskId])
+  @@index([authorId])
+}
+
+model Team {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  members     TeamMember[]
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  userId    String
+  teamId    String
+  role      String   @default("MEMBER")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+  @@index([userId])
+  @@index([teamId])
+}
+
+model Notification {
+  id        String             @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      NotificationType   @default(INFO)
+  read      Boolean            @default(false)
+  referenceId String?
+  referenceType String?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+  userId    String
+  taskId    String?
+  action    String
+  entityType String
+  entityId  String
+  oldValue  String?
+  newValue  String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  task      Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([taskId])
+  @@index([entityType])
+}
+
 enum UserRole {
   ADMIN
   EMPLOYEE
-
 }
 
 enum TaskStatus {
@@ -54,4 +132,15 @@ enum TaskStatus {
   IN_PROGRESS
   DONE
   BLOCKED
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+  TASK_ASSIGNED
+  TASK_UPDATED
+  COMMENT_ADDED
+  TEAM_INVITATION
 }

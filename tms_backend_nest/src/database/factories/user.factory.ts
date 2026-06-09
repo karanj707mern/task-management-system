@@ -1,12 +1,11 @@
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
-import { UserRole } from '../../common/constants/app.constants';
+import { UserRole } from '@prisma/client';
 
 export type UserFactoryData = {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   role: UserRole;
 };
 
@@ -25,9 +24,8 @@ export class UserFactory {
     return {
       email: faker.internet.email(),
       password: hashedPassword,
-      firstName: faker.person.firstName(),
-      lastName: faker.person.lastName(),
-      role: UserRole.USER,
+      name: faker.person.fullName(),
+      role: UserRole.EMPLOYEE,
       ...overrides,
     };
   }
@@ -52,6 +50,6 @@ export class UserFactory {
   static async createManager(
     overrides: UserFactoryOverrides = {},
   ): Promise<UserFactoryData> {
-    return this.createUserData({ role: UserRole.MANAGER, ...overrides });
+    return this.createUserData({ role: UserRole.EMPLOYEE, ...overrides });
   }
 }

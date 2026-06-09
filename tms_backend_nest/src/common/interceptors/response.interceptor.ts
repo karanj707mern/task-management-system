@@ -7,15 +7,23 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-/**
- * Response transformation interceptor
- * Wraps all responses in a standardized format
- */
+interface ApiResponse<T> {
+  success: true;
+  data: T;
+  timestamp: string;
+}
+
 @Injectable()
-export class ResponseInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+export class ResponseInterceptor<T> implements NestInterceptor<
+  T,
+  ApiResponse<T>
+> {
+  intercept(
+    context: ExecutionContext,
+    next: CallHandler<T>,
+  ): Observable<ApiResponse<T>> {
     return next.handle().pipe(
-      map((data) => {
+      map((data: T) => {
         return {
           success: true,
           data,

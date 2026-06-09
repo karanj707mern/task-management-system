@@ -3,15 +3,15 @@
  */
 
 export class AuthTokenResponseDto {
-  accessToken: string;
+  accessToken!: string;
   refreshToken?: string;
-  expiresIn: number;
+  expiresIn!: number;
   tokenType: string = 'Bearer';
 }
 
 export class LoginResponseDto {
-  token: AuthTokenResponseDto;
-  user: {
+  token!: AuthTokenResponseDto;
+  user!: {
     id: string;
     email: string;
     firstName: string;
@@ -21,9 +21,9 @@ export class LoginResponseDto {
 }
 
 export class RegisterResponseDto {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  message: string;
+  id!: string;
+  email!: string;
+  firstName!: string;
+  lastName!: string;
+  message!: string;
 }

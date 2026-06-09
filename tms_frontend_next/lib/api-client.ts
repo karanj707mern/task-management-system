@@ -45,9 +45,9 @@ export class ApiClient {
   }
 
   private async fetchWithAuth(url: string, options: RequestInit = {}) {
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...(options.headers as Record<string, string> | undefined),
     };
 
     // Add auth token if available
@@ -71,32 +71,32 @@ export class ApiClient {
     return response.json();
   }
 
-  async get<T>(path: string): Promise<T> {
+  async get<T = any>(path: string): Promise<T> {
     return this.fetchWithAuth(`${API_BASE_URL}${path}`);
   }
 
-  async post<T>(path: string, data?: any): Promise<T> {
+  async post<T = any>(path: string, data?: any): Promise<T> {
     return this.fetchWithAuth(`${API_BASE_URL}${path}`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async put<T>(path: string, data?: any): Promise<T> {
+  async put<T = any>(path: string, data?: any): Promise<T> {
     return this.fetchWithAuth(`${API_BASE_URL}${path}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async patch<T>(path: string, data?: any): Promise<T> {
+  async patch<T = any>(path: string, data?: any): Promise<T> {
     return this.fetchWithAuth(`${API_BASE_URL}${path}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
   }
 
-  async delete<T>(path: string): Promise<T> {
+  async delete<T = any>(path: string): Promise<T> {
     return this.fetchWithAuth(`${API_BASE_URL}${path}`, {
       method: 'DELETE',
     });

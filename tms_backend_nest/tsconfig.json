@@ -1,9 +1,15 @@
 {
   "compilerOptions": {
     "paths": {
+      "@/*": ["./src/*"],
       "@/auth/*": ["./src/modules/auth/*"],
       "@/users/*": ["./src/modules/users/*"],
-      "@/health/*": ["./src/health/*"]
+      "@/health/*": ["./src/health/*"],
+      "@/common/*": ["./src/common/*"],
+      "@/modules/*": ["./src/modules/*"],
+      "@/infrastructure/*": ["./src/infrastructure/*"],
+      "@/shared/*": ["./src/shared/*"],
+      "@/config/*": ["./src/config/*"]
     },
     "module": "nodenext",
     "moduleResolution": "nodenext",

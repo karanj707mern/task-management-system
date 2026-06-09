@@ -1,40 +1,48 @@
 import { faker } from '@faker-js/faker';
-import { TaskStatus, TaskPriority } from '../../common/constants/app.constants';
+import { TaskStatus, type Prisma } from '@prisma/client';
+
+type TaskFactoryData = Prisma.TaskUncheckedCreateInput;
+type TaskFactoryOverrides = Partial<TaskFactoryData>;
 
 /**
  * Task factory for generating test data
  */
 export class TaskFactory {
-  static createTaskData(projectId: string, overrides?: any) {
+  static createTaskData(
+    projectId: string,
+    assigneeId: string,
+    overrides: TaskFactoryOverrides = {},
+  ): TaskFactoryData {
     return {
       title: faker.hacker.phrase(),
       description: faker.lorem.paragraph(),
       projectId,
+      assigneeId,
       status: faker.helpers.arrayElement(Object.values(TaskStatus)),
-      priority: faker.helpers.arrayElement(Object.values(TaskPriority)),
-      dueDate: faker.date.future(),
       ...overrides,
     };
   }
 
-  static createMultiple(projectId: string, count: number, overrides?: any) {
-    const tasks = [];
+  static createMultiple(
+    projectId: string,
+    assigneeId: string,
+    count: number,
+    overrides: TaskFactoryOverrides = {},
+  ): TaskFactoryData[] {
+    const tasks: TaskFactoryData[] = [];
     for (let i = 0; i < count; i++) {
-      tasks.push(this.createTaskData(projectId, overrides));
+      tasks.push(this.createTaskData(projectId, assigneeId, overrides));
     }
     return tasks;
   }
 
-  static createInProgress(projectId: string, overrides?: any) {
-    return this.createTaskData(projectId, {
+  static createInProgress(
+    projectId: string,
+    assigneeId: string,
+    overrides: TaskFactoryOverrides = {},
+  ) {
+    return this.createTaskData(projectId, assigneeId, {
       status: TaskStatus.IN_PROGRESS,
-      ...overrides,
-    });
-  }
-
-  static createUrgent(projectId: string, overrides?: any) {
-    return this.createTaskData(projectId, {
-      priority: TaskPriority.URGENT,
       ...overrides,
     });
   }

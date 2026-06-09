@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import * as Redis from 'ioredis';
+import Redis from 'ioredis';
 
 /**
  * Redis client service for caching and pub/sub
  */
 @Injectable()
 export class RedisService {
-  private client: Redis.Redis;
+  private client: Redis;
 
   constructor() {
     this.client = new Redis({
@@ -16,7 +16,7 @@ export class RedisService {
     });
   }
 
-  getClient(): Redis.Redis {
+  getClient(): Redis {
     return this.client;
   }
 

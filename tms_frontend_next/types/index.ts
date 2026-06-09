@@ -2,26 +2,23 @@
  * Frontend type definitions matching backend schema
  */
 
-export type UserRole = 'admin' | 'manager' | 'user';
+export type UserRole = 'ADMIN' | 'EMPLOYEE';
 
-export type TaskStatus = 'todo' | 'in_progress' | 'in_review' | 'done' | 'archived';
-export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'BLOCKED';
 
 export interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   role: UserRole;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Project {
   id: string;
   name: string;
   description?: string;
-  color?: string;
-  createdBy: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,12 +28,12 @@ export interface Task {
   title: string;
   description?: string;
   projectId: string;
+  assigneeId: string;
   status: TaskStatus;
-  priority: TaskPriority;
-  assignedTo?: string;
-  dueDate?: Date;
   createdAt: Date;
   updatedAt: Date;
+  assignee?: Pick<User, 'id' | 'email' | 'name' | 'role'>;
+  project?: Project;
 }
 
 export interface Comment {
@@ -71,8 +68,7 @@ export interface LoginRequest {
 export interface RegisterRequest {
   email: string;
   password: string;
-  firstName: string;
-  lastName: string;
+  name: string;
 }
 
 export interface Notification {

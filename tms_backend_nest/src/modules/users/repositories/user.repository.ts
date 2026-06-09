@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../infrastructure/prisma/prisma.service';
+import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 
 /**
  * User repository for data access
@@ -14,8 +14,7 @@ export class UserRepository {
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
+        name: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -36,8 +35,7 @@ export class UserRepository {
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
+        name: true,
         role: true,
         createdAt: true,
       },
@@ -55,8 +53,7 @@ export class UserRepository {
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
+        name: true,
         role: true,
         createdAt: true,
       },
@@ -70,8 +67,7 @@ export class UserRepository {
       select: {
         id: true,
         email: true,
-        firstName: true,
-        lastName: true,
+        name: true,
         role: true,
         updatedAt: true,
       },
