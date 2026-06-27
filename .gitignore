@@ -1,0 +1,11 @@
+# Root-level IDE and tooling
+.continue/
+.kilo/
+
+# Root-level dependencies (if any)
+/node_modules/
+/package.json
+/package-lock.json
+
+# OS
+.DS_Store

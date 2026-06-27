@@ -6,6 +6,7 @@ import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
 import { envValidationSchema } from './config/env.validation';
 import { PrismaModule } from './infrastructure/prisma/prisma.module';
+import { FileUploadModule } from './infrastructure/file-upload/file-upload.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -23,8 +24,8 @@ import { ActivityModule } from './modules/activity/activity.module';
       load: [appConfig, authConfig, databaseConfig, redisConfig],
       validationSchema: envValidationSchema,
     }),
-
     PrismaModule,
+    FileUploadModule,
     HealthModule,
     AuthModule,
     UsersModule,

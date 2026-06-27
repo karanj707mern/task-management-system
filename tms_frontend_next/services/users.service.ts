@@ -1,41 +1,63 @@
 'use client';
 
 import { apiClient } from '@/lib/api-client';
-import { User } from '@/types';
+import { User, UserRole } from '@/types';
 import { generateQueryString } from '@/lib/utils';
 
 export interface UserFilters {
   page?: number;
   limit?: number;
   search?: string;
+  role?: UserRole;
+  department?: string;
+  isActive?: boolean;
 }
 
-/**
- * Users API service
- */
+export interface UpdateUserPayload {
+  name?: string;
+  email?: string;
+  department?: string;
+  jobTitle?: string;
+  phone?: string;
+  avatar?: string;
+  password?: string;
+  isActive?: boolean;
+  role?: UserRole;
+}
+
 export const userService = {
-  async getAll(filters?: UserFilters) {
+  async getAll(filters?: UserFilters): Promise<{ data: User[]; meta: { total: number; page: number; limit: number; totalPages: number } }> {
     const queryString = generateQueryString(filters || {});
-    const response = await apiClient.get(`/users${queryString}`);
-    return response.data;
+    return apiClient.get(`/users${queryString}`);
   },
 
   async getById(id: string): Promise<User> {
-    const response = await apiClient.get(`/users/${id}`);
-    return response.data;
+    return apiClient.get(`/users/${id}`);
   },
 
   async getProfile(): Promise<User> {
-    const response = await apiClient.get('/users/profile/me');
-    return response.data;
+    return apiClient.get('/users/me');
   },
 
-  async update(id: string, data: Partial<User>): Promise<User> {
-    const response = await apiClient.put(`/users/${id}`, data);
-    return response.data;
+  async updateProfile(data: UpdateUserPayload): Promise<User> {
+    return apiClient.patch('/users/me', data);
+  },
+
+  async update(id: string, data: UpdateUserPayload): Promise<User> {
+    return apiClient.patch(`/users/${id}`, data);
+  },
+
+  async create(data: { email: string; password: string; name?: string; role?: UserRole }): Promise<User> {
+    return apiClient.post('/users', data);
   },
 
   async delete(id: string): Promise<void> {
     await apiClient.delete(`/users/${id}`);
+  },
+
+  async uploadAvatar(file: File): Promise<{ avatarUrl: string }> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return apiClient.upload('/users/me/avatar', formData);
   },
 };
