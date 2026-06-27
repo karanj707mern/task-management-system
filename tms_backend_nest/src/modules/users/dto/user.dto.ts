@@ -1,72 +1,99 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
+  IsEnum,
   MinLength,
   MaxLength,
-  IsOptional,
+  Matches,
 } from 'class-validator';
-import {
-  PASSWORD_MIN_LENGTH,
-  PASSWORD_MAX_LENGTH,
-} from '../../../common/constants/app.constants';
+import { Transform } from 'class-transformer';
+import { UserRole } from '@prisma/client';
 
-/**
- * Create user DTO
- */
-export class CreateUserDto {
+export class CreateManualUserDto {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(PASSWORD_MIN_LENGTH)
-  @MaxLength(PASSWORD_MAX_LENGTH)
-  password: string;
+  @MinLength(10)
+  @MaxLength(128)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{10,128}$/, {
+    message: 'Password must include uppercase, lowercase, number, and special character',
+  })
+  password!: string;
 
-  @IsNotEmpty()
+  @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
-  firstName: string;
+  @MaxLength(100)
+  name?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+
+  @IsOptional()
   @IsString()
-  lastName: string;
+  department?: string;
+
+  @IsOptional()
+  @IsString()
+  jobTitle?: string;
 }
 
-/**
- * Update user DTO
- */
 export class UpdateUserDto {
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
-  firstName?: string;
+  @MaxLength(100)
+  name?: string;
 
   @IsOptional()
-  @IsString()
-  lastName?: string;
-
-  @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsEmail()
   email?: string;
+
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  department?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  jobTitle?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  avatar?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(10)
+  @MaxLength(128)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{10,128}$/, {
+    message: 'Password must include uppercase, lowercase, number, and special character',
+  })
+  password?: string;
+
+  @IsOptional()
+  isActive?: boolean;
 }
 
-/**
- * Change password DTO
- */
-export class ChangePasswordDto {
-  @IsNotEmpty()
-  @IsString()
-  currentPassword: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @MinLength(PASSWORD_MIN_LENGTH)
-  @MaxLength(PASSWORD_MAX_LENGTH)
-  newPassword: string;
-
-  @IsNotEmpty()
-  @IsString()
-  @MinLength(PASSWORD_MIN_LENGTH)
-  @MaxLength(PASSWORD_MAX_LENGTH)
-  confirmPassword: string;
+export class UpdateRoleDto {
+  @IsEnum(UserRole)
+  role!: UserRole;
 }

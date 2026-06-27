@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
 
-/**
- * Redis client service for caching and pub/sub
- */
 @Injectable()
 export class RedisService {
   private client: Redis;

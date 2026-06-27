@@ -13,6 +13,22 @@ export class EmailTemplates {
     `;
   }
 
+  static taskStatusChanged(
+    userName: string,
+    taskTitle: string,
+    oldStatus: string,
+    newStatus: string,
+  ): string {
+    return `
+      <h2>Task Status Updated</h2>
+      <p>Hi ${userName},</p>
+      <p>The status of task <strong>${taskTitle}</strong> has changed.</p>
+      <p>From: ${oldStatus}</p>
+      <p>To: ${newStatus}</p>
+      <p>Please log in to the task management system to view more details.</p>
+    `;
+  }
+
   static taskUpdated(
     userName: string,
     taskTitle: string,

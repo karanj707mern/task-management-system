@@ -1,4 +1,30 @@
 services:
+  api:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: task_api
+    restart: always
+    ports:
+      - '5000:5000'
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://taskuser:tmsnextnest@postgres:5432/taskmgmtdb
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: taskuser
+      RABBITMQ_PASS: tmsnextnest
+      FRONTEND_URL: http://localhost:3000
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    volumes:
+      - uploads_data:/app/uploads
+
   postgres:
     image: postgres:18
     container_name: task_postgres
@@ -10,17 +36,32 @@ services:
       POSTGRES_PASSWORD: tmsnextnest
       POSTGRES_DB: taskmgmtdb
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - postgres_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7
     container_name: task_redis
     restart: always
     ports:
-      - '6380:6379'
+      - '6379:6379'
     volumes:
       - redis_data:/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: task_rabbitmq
+    restart: always
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: taskuser
+      RABBITMQ_DEFAULT_PASS: tmsnextnest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
 
 volumes:
   postgres_data:
   redis_data:
+  rabbitmq_data:
+  uploads_data:

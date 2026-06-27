@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ActivityRepository, ICreateActivity } from './activity.repository';
 import { IPaginationQuery } from '@/common/types/common.types';
+import { UserRole } from '@prisma/client';
+import { assertRole, isManagerOrAbove } from '@/common/authorization/authorization';
 
 @Injectable()
 export class ActivityService {
@@ -10,15 +12,75 @@ export class ActivityService {
     return this.activityRepository.create(data);
   }
 
-  async getActivity(id: string) {
+  async findAll(query: IPaginationQuery, role: UserRole) {
+    assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER']);
+
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [activities, total] = await Promise.all([
+      this.activityRepository.findAll(skip, limit),
+      this.activityRepository.countAll(),
+    ]);
+
+    return {
+      data: activities,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getProjectActivity(projectId: string, query: IPaginationQuery, role: UserRole) {
+    assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER']);
+
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const [activities, total] = await Promise.all([
+      this.activityRepository.findByProjectId(projectId, skip, limit),
+      this.activityRepository.countByProjectId(projectId),
+    ]);
+
+    return {
+      data: activities,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getActivity(id: string, userId: string, role: UserRole) {
+    assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'VIEWER']);
     const activity = await this.activityRepository.findById(id);
-    if (!activity) {
+    if (!activity || (!isManagerOrAbove(role) && activity.userId !== userId)) {
       throw new NotFoundException('Activity not found');
     }
     return activity;
   }
 
-  async getTaskActivity(taskId: string, query: IPaginationQuery) {
+  async getTaskActivity(
+    taskId: string,
+    query: IPaginationQuery,
+    userId: string,
+    role: UserRole,
+  ) {
+    assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'VIEWER']);
+    if (!isManagerOrAbove(role)) {
+      const task = await this.activityRepository.findTaskAccess(taskId, userId);
+      if (!task) {
+        throw new ForbiddenException('You do not have access to this task');
+      }
+    }
+
     const page = query.page || 1;
     const limit = query.limit || 10;
     const skip = (page - 1) * limit;
@@ -39,7 +101,17 @@ export class ActivityService {
     };
   }
 
-  async getUserActivity(userId: string, query: IPaginationQuery) {
+  async getUserActivity(
+    userId: string,
+    query: IPaginationQuery,
+    currentUserId: string,
+    role: UserRole,
+  ) {
+    assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'VIEWER']);
+    if (!isManagerOrAbove(role) && userId !== currentUserId) {
+      throw new ForbiddenException('You can only view your own activity');
+    }
+
     const page = query.page || 1;
     const limit = query.limit || 10;
     const skip = (page - 1) * limit;
@@ -60,7 +132,8 @@ export class ActivityService {
     };
   }
 
-  async getEntityActivity(entityType: string, query: IPaginationQuery) {
+  async getEntityActivity(entityType: string, query: IPaginationQuery, role: UserRole) {
+    assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER']);
     const page = query.page || 1;
     const limit = query.limit || 10;
     const skip = (page - 1) * limit;
@@ -143,6 +216,54 @@ export class ActivityService {
       action: 'DELETED',
       entityType: 'COMMENT',
       entityId: commentId,
+    });
+  }
+
+  logCommitCreated(userId: string, commitId: string, branchName: string, taskId?: string) {
+    return this.logActivity({
+      userId,
+      taskId,
+      action: 'COMMITTED',
+      entityType: 'COMMIT',
+      entityId: commitId,
+      newValue: branchName,
+      metadata: { branchName },
+    });
+  }
+
+  logBranchCreated(userId: string, branchId: string, branchName: string, taskId?: string) {
+    return this.logActivity({
+      userId,
+      taskId,
+      action: 'CREATED',
+      entityType: 'BRANCH',
+      entityId: branchId,
+      newValue: branchName,
+      metadata: { branchName },
+    });
+  }
+
+  logPRCreated(userId: string, prId: string, sourceBranch: string, targetBranch: string, taskId: string) {
+    return this.logActivity({
+      userId,
+      taskId,
+      action: 'CREATED',
+      entityType: 'PULL_REQUEST',
+      entityId: prId,
+      newValue: `${sourceBranch} → ${targetBranch}`,
+      metadata: { sourceBranch, targetBranch },
+    });
+  }
+
+  logPRMerged(userId: string, prId: string, title: string, taskId?: string) {
+    return this.logActivity({
+      userId,
+      taskId,
+      action: 'MERGED',
+      entityType: 'PULL_REQUEST',
+      entityId: prId,
+      newValue: title,
+      metadata: { title },
     });
   }
 }

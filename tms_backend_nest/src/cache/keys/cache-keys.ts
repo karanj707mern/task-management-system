@@ -1,7 +1,3 @@
-/**
- * Cache key generator utilities
- */
-
 export class CacheKeys {
   static user(id: string): string {
     return `user:${id}`;

@@ -1,21 +1,15 @@
-import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-/**
- * Create team DTO
- */
 export class CreateTeamDto {
   @IsNotEmpty()
   @IsString()
-  name: string;
+  name!: string;
 
   @IsOptional()
   @IsString()
   description?: string;
 }
 
-/**
- * Update team DTO
- */
 export class UpdateTeamDto {
   @IsOptional()
   @IsString()

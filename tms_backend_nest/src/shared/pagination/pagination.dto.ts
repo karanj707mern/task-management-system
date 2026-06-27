@@ -1,9 +1,6 @@
-import { IsInt, IsOptional, Min, Max } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsInt, IsOptional, Max, Min } from 'class-validator';
 
-/**
- * Pagination request DTO
- */
 export class PaginationDto {
   @IsOptional()
   @Type(() => Number)
@@ -19,21 +16,15 @@ export class PaginationDto {
   limit?: number = 10;
 }
 
-/**
- * Pagination metadata DTO
- */
 export class PageMetaDto {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
+  page!: number;
+  limit!: number;
+  total!: number;
+  totalPages!: number;
+  hasNextPage!: boolean;
+  hasPreviousPage!: boolean;
 }
 
-/**
- * Paginated response DTO
- */
 export class PageDto<T> {
   data: T[];
   meta: PageMetaDto;

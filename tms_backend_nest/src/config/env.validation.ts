@@ -7,9 +7,32 @@ export const envValidationSchema = Joi.object({
     .valid('development', 'production', 'test')
     .default('development'),
 
-  JWT_SECRET: Joi.string().required(),
-  JWT_REFRESH_SECRET: Joi.string().required(),
+  JWT_SECRET: Joi.string().min(32).required(),
+  JWT_REFRESH_SECRET: Joi.string().min(32).required(),
+
   REDIS_HOST: Joi.string().required(),
   REDIS_PORT: Joi.number().required(),
-  LOG_LEVEL: Joi.string().default('debug'),
+
+  MAIL_HOST: Joi.string().required(),
+  MAIL_PORT: Joi.number().required(),
+  MAIL_USER: Joi.string().required(),
+  MAIL_PASSWORD: Joi.string().required(),
+  MAIL_FROM: Joi.string().required(),
+
+  RABBITMQ_URL: Joi.string()
+    .pattern(/^amqp:\/\//)
+    .default('amqp://localhost:5672'),
+
+  SEED_ADMIN_EMAIL: Joi.string().email().required(),
+  SEED_ADMIN_PASSWORD: Joi.string().min(8).required(),
+
+  LOG_LEVEL: Joi.string()
+    .valid('fatal', 'error', 'warn', 'info', 'debug', 'trace')
+    .default('debug'),
+
+  FRONTEND_URL: Joi.string().default('http://localhost:3000'),
+
+  CACHE_TTL: Joi.number().default(600),
+
+  GITHUB_WEBHOOK_SECRET: Joi.string().default(''),
 });

@@ -1,7 +1,3 @@
-/**
- * Auth response DTOs
- */
-
 export class AuthTokenResponseDto {
   accessToken!: string;
   refreshToken?: string;

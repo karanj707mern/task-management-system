@@ -1,48 +1,71 @@
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+  IsUrl,
+} from 'class-validator';
+import { Transform } from 'class-transformer';
 
-/**
- * Create project DTO
- */
 export class CreateProjectDto {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsNotEmpty()
   @IsString()
+  @MinLength(3)
+  @MaxLength(120)
   name!: string;
 
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
+  @MaxLength(1000)
   description?: string;
 
   @IsOptional()
   @IsString()
-  color?: string;
+  githubRepoId?: string;
+
+  @IsOptional()
+  @IsUrl()
+  @IsString()
+  githubRepoUrl?: string;
 }
 
-/**
- * Update project DTO
- */
 export class UpdateProjectDto {
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
+  @MinLength(3)
+  @MaxLength(120)
   name?: string;
 
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
+  @MaxLength(1000)
   description?: string;
 
   @IsOptional()
   @IsString()
-  color?: string;
+  githubRepoId?: string;
+
+  @IsOptional()
+  @IsUrl()
+  @IsString()
+  githubRepoUrl?: string;
 }
 
-/**
- * List projects query DTO
- */
 export class ListProjectsQueryDto {
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
+  @MaxLength(100)
   search?: string;
 
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
+  @MaxLength(50)
   status?: string;
 }

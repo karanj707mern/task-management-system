@@ -2,7 +2,6 @@ import {
   ArgumentMetadata,
   BadRequestException,
   Injectable,
-  Type,
   PipeTransform,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
@@ -18,7 +17,10 @@ export class ValidationPipe implements PipeTransform {
       return value;
     }
 
-    const object = plainToInstance(metatype as Type<object>, value as unknown);
+    const object: object = plainToInstance(
+      metatype as new (...args: unknown[]) => object,
+      value,
+    );
     const errors = await validate(object);
 
     if (errors.length > 0) {
@@ -35,7 +37,7 @@ export class ValidationPipe implements PipeTransform {
     return object;
   }
 
-  private toValidate(metatype: Type<unknown>): boolean {
+  private toValidate(metatype: any): boolean {
     const types: any[] = [String, Boolean, Number, Array, Object];
     return !types.includes(metatype);
   }

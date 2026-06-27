@@ -1,65 +1,33 @@
-'use client';
-
 import { apiClient } from '@/lib/api-client';
-import { AuthToken, LoginRequest, RegisterRequest, User } from '@/types';
+import { LoginRequest, User } from '@/types';
 
-/**
- * Authentication service
- */
 export const authService = {
-  async login(credentials: LoginRequest): Promise<{ token: AuthToken; user: User }> {
-    const response = await apiClient.post('/auth/login', credentials);
-    if (response.data?.token) {
-      localStorage.setItem('auth_token', response.data.token.accessToken);
-      if (response.data.token.refreshToken) {
-        localStorage.setItem('refresh_token', response.data.token.refreshToken);
-      }
-    }
-    return response.data;
-  },
-
-  async register(data: RegisterRequest): Promise<User> {
-    const response = await apiClient.post('/auth/register', data);
-    return response.data;
+  async login(credentials: LoginRequest): Promise<{ accessToken: string; user: User }> {
+    return apiClient.post<{ accessToken: string; user: User }>('/auth/login', credentials);
   },
 
   async logout(): Promise<void> {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
-    await apiClient.post('/auth/logout', {});
+    await apiClient.post('/auth/logout');
   },
 
-  async refreshToken(): Promise<AuthToken> {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (!refreshToken) throw new Error('No refresh token available');
-
-    const response = await apiClient.post('/auth/refresh', { refreshToken });
-    if (response.data?.accessToken) {
-      localStorage.setItem('auth_token', response.data.accessToken);
+  async isAuthenticated(): Promise<boolean> {
+    try {
+      await this.getProfile();
+      return true;
+    } catch {
+      return false;
     }
-    return response.data;
   },
 
-  async getCurrentUser(): Promise<User> {
-    const response = await apiClient.get('/auth/me');
-    return response.data;
+  getProfile(): Promise<User> {
+    return apiClient.get<User>('/users/me');
   },
 
-  async changePassword(data: {
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-  }): Promise<void> {
-    await apiClient.put('/auth/change-password', data);
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    return apiClient.post('/auth/forgot-password', { email });
   },
 
-  isAuthenticated(): boolean {
-    if (typeof window === 'undefined') return false;
-    return !!localStorage.getItem('auth_token');
-  },
-
-  getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('auth_token');
+  async resetPassword(token: string, password: string): Promise<{ message: string }> {
+    return apiClient.post('/auth/reset-password', { token, password });
   },
 };

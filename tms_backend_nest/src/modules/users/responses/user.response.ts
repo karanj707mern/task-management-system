@@ -1,7 +1,3 @@
-/**
- * User response DTOs
- */
-
 export class UserResponseDto {
   id: string;
   email: string;

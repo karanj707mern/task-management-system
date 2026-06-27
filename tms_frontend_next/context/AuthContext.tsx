@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<any>;
+  login: (params: { email: string; password: string }) => Promise<{ accessToken: string; user: User }>;
   logout: () => Promise<void>;
 }
 

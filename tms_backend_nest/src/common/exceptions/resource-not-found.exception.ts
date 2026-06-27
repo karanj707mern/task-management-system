@@ -1,8 +1,5 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
-/**
- * Exception for resource not found scenarios
- */
 export class ResourceNotFoundException extends HttpException {
   constructor(resource: string, identifier?: string | number) {
     const message = identifier

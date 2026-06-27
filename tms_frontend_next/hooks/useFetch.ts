@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 
 interface UseFetchOptions<T> {
   onSuccess?: (data: T) => void;
@@ -18,7 +18,7 @@ export function useFetch<T>(
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const execute = useCallback(async () => {
+  const execute = async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -34,7 +34,7 @@ export function useFetch<T>(
     } finally {
       setIsLoading(false);
     }
-  }, [fn, options]);
+  };
 
   return {
     data,

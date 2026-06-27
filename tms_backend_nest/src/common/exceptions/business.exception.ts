@@ -1,8 +1,5 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
-/**
- * Business logic exception for domain-specific errors
- */
 export class BusinessException extends HttpException {
   constructor(
     message: string,

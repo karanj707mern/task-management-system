@@ -3,9 +3,6 @@ import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
 import * as jobDefs from '../jobs/job-definitions';
 
-/**
- * Job producer service for enqueuing jobs
- */
 @Injectable()
 export class JobProducerService {
   constructor(

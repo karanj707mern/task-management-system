@@ -1,29 +1,38 @@
+import { IPaginatedResponse } from '@/common/types/common.types';
 import {
+  ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ConflictException,
 } from '@nestjs/common';
-import { TeamRepository } from './teams.repository';
+import { Prisma } from '@prisma/client';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
-import { IPaginationQuery } from '@/common/types/common.types';
+import { TeamsQueryDto } from '@/common/dto/pagination-query.dto';
+import { TeamRepository } from './teams.repository';
+import { TeamMemberRole, UserRole } from '@prisma/client';
+import { assertRole, isManagerOrAbove } from '@/common/authorization/authorization';
 
 @Injectable()
 export class TeamsService {
   constructor(private readonly teamRepository: TeamRepository) {}
 
-  async createTeam(createTeamDto: CreateTeamDto) {
+  async createTeam(createTeamDto: CreateTeamDto, role: UserRole) {
+    assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER']);
     try {
       return await this.teamRepository.create(createTeamDto);
-    } catch (error: any) {
-      if (error.code === 'P2002') {
-        throw new ConflictException('Team with this name already exists');
+    } catch (error: unknown) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException('Team with this name already exists');
+        }
       }
       throw error;
     }
   }
 
-  async getTeam(id: string) {
+  async getTeam(id: string, role: UserRole) {
+    assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'VIEWER']);
     const team = await this.teamRepository.findById(id);
     if (!team) {
       throw new NotFoundException('Team not found');
@@ -31,9 +40,9 @@ export class TeamsService {
     return team;
   }
 
-  async getAllTeams(query: IPaginationQuery) {
-    const page = query.page || 1;
-    const limit = query.limit || 10;
+  async getAllTeams(query: TeamsQueryDto): Promise<IPaginatedResponse<unknown>> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
     const [teams, total] = await Promise.all([
@@ -52,37 +61,65 @@ export class TeamsService {
     };
   }
 
-  async updateTeam(id: string, updateTeamDto: UpdateTeamDto) {
-    await this.getTeam(id);
+  async updateTeam(id: string, updateTeamDto: UpdateTeamDto, role: UserRole) {
+    if (!isManagerOrAbove(role)) {
+      throw new ForbiddenException('Only managers and administrators can update teams');
+    }
+    await this.getTeam(id, role);
     try {
       return await this.teamRepository.update(id, updateTeamDto);
-    } catch (error: any) {
-      if (error.code === 'P2002') {
-        throw new ConflictException('Team with this name already exists');
+    } catch (error: unknown) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException('Team with this name already exists');
+        }
       }
       throw error;
     }
   }
 
-  async deleteTeam(id: string) {
-    await this.getTeam(id);
+  async deleteTeam(id: string, role: UserRole) {
+    if (!isManagerOrAbove(role)) {
+      throw new ForbiddenException('Only managers and administrators can delete teams');
+    }
+    await this.getTeam(id, role);
     await this.teamRepository.delete(id);
     return { message: 'Team deleted successfully' };
   }
 
-  async addMemberToTeam(teamId: string, userId: string) {
-    await this.getTeam(teamId);
+  async addMemberToTeam(teamId: string, userId: string, role: UserRole, memberRole: TeamMemberRole = TeamMemberRole.MEMBER) {
+    if (!isManagerOrAbove(role)) {
+      throw new ForbiddenException('Only managers and administrators can manage team members');
+    }
+    await this.getTeam(teamId, role);
 
     const existingMember = await this.teamRepository.findMember(teamId, userId);
     if (existingMember) {
       throw new ConflictException('User is already a member of this team');
     }
 
-    return this.teamRepository.addMember(teamId, userId);
+    return this.teamRepository.addMember(teamId, userId, memberRole);
   }
 
-  async removeMemberFromTeam(teamId: string, userId: string) {
-    await this.getTeam(teamId);
+  async updateMemberRole(teamId: string, userId: string, role: UserRole, memberRole: TeamMemberRole) {
+    if (!isManagerOrAbove(role)) {
+      throw new ForbiddenException('Only managers and administrators can manage team members');
+    }
+    await this.getTeam(teamId, role);
+
+    const member = await this.teamRepository.findMember(teamId, userId);
+    if (!member) {
+      throw new NotFoundException('Member not found in this team');
+    }
+
+    return this.teamRepository.updateMemberRole(teamId, userId, memberRole);
+  }
+
+  async removeMemberFromTeam(teamId: string, userId: string, role: UserRole) {
+    if (!isManagerOrAbove(role)) {
+      throw new ForbiddenException('Only managers and administrators can manage team members');
+    }
+    await this.getTeam(teamId, role);
 
     const member = await this.teamRepository.findMember(teamId, userId);
     if (!member) {
@@ -93,11 +130,11 @@ export class TeamsService {
     return { message: 'Member removed successfully' };
   }
 
-  async getTeamMembers(teamId: string, query: IPaginationQuery) {
-    await this.getTeam(teamId);
+  async getTeamMembers(teamId: string, query: TeamsQueryDto, role: UserRole) {
+    await this.getTeam(teamId, role);
 
-    const page = query.page || 1;
-    const limit = query.limit || 10;
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
     const [members, total] = await Promise.all([

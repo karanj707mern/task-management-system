@@ -1,51 +1,40 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../infrastructure/prisma/prisma.service';
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import { UserFactory } from '../factories/user.factory';
-import { AppLogger } from '../../infrastructure/logger/app-logger.service';
 
-/**
- * User seeder for database initialization
- */
 @Injectable()
 export class UserSeeder {
+  private readonly logger = new Logger(UserSeeder.name);
+
   constructor(
-    private prisma: PrismaService,
-    private logger: AppLogger,
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
   ) {}
 
   async seed() {
     this.logger.log('Starting user seeding...');
 
     try {
-      // Create admin user
+      const email = this.config.getOrThrow<string>('SEED_ADMIN_EMAIL');
+      const password = this.config.getOrThrow<string>('SEED_ADMIN_PASSWORD');
       const adminData = await UserFactory.createAdmin({
-        email: 'admin@example.com',
+        email,
+        password,
+        name: email.split('@')[0],
       });
+
       await this.prisma.user.upsert({
         where: { email: adminData.email },
-        update: {},
+        update: {
+          name: adminData.name,
+          role: adminData.role,
+          password: adminData.password,
+        },
         create: adminData,
       });
-      this.logger.log('Admin user seeded');
 
-      // Create manager user
-      const managerData = await UserFactory.createManager({
-        email: 'manager@example.com',
-      });
-      await this.prisma.user.upsert({
-        where: { email: managerData.email },
-        update: {},
-        create: managerData,
-      });
-      this.logger.log('Manager user seeded');
-
-      // Create regular users
-      const users = await UserFactory.createMultiple(5);
-      for (const user of users) {
-        await this.prisma.user.create({ data: user });
-      }
-      this.logger.log('5 regular users seeded');
-
+      this.logger.log(`Admin user seeded: ${adminData.email}`);
       this.logger.log('User seeding completed');
     } catch (error) {
       this.logger.error('Error seeding users', error as string);

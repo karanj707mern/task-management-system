@@ -1,7 +1,3 @@
-/**
- * Job type definitions for BullMQ queues
- */
-
 export interface SendEmailJobData {
   to: string;
   subject: string;

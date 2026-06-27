@@ -2,28 +2,34 @@ import {
   IsNotEmpty,
   IsString,
   IsOptional,
-  IsUUID,
   IsEnum,
+  MaxLength,
+  MinLength,
+  IsNumber,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import {
   TaskStatus,
   TaskPriority,
 } from '../../../common/constants/app.constants';
+import { LinkType } from '@prisma/client';
 
-/**
- * Create task DTO
- */
 export class CreateTaskDto {
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsNotEmpty()
   @IsString()
+  @MinLength(3)
+  @MaxLength(200)
   title: string;
 
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
+  @MaxLength(2000)
   description?: string;
 
   @IsNotEmpty()
-  @IsUUID()
+  @IsString()
   projectId: string;
 
   @IsOptional()
@@ -35,23 +41,25 @@ export class CreateTaskDto {
   priority?: TaskPriority = TaskPriority.MEDIUM;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
   assignedTo?: string;
 
   @IsOptional()
   dueDate?: Date;
 }
 
-/**
- * Update task DTO
- */
 export class UpdateTaskDto {
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
+  @MinLength(3)
+  @MaxLength(200)
   title?: string;
 
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   @IsString()
+  @MaxLength(2000)
   description?: string;
 
   @IsOptional()
@@ -63,18 +71,41 @@ export class UpdateTaskDto {
   priority?: TaskPriority;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
   assignedTo?: string;
 
   @IsOptional()
   dueDate?: Date;
 }
 
-/**
- * Update task status DTO
- */
 export class UpdateTaskStatusDto {
   @IsNotEmpty()
   @IsEnum(TaskStatus)
   status: TaskStatus;
+}
+
+export class CreateWorkLogDto {
+  @IsNotEmpty()
+  @IsNumber()
+  hours: number;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+}
+
+export class LinkTasksDto {
+  @IsNotEmpty()
+  @IsString()
+  linkedTaskId: string;
+
+  @IsNotEmpty()
+  @IsEnum(LinkType)
+  linkType: LinkType;
+}
+
+export class WatchTaskDto {
+  @IsNotEmpty()
+  @IsString()
+  userId: string;
 }

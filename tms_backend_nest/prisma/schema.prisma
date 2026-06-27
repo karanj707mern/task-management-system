@@ -7,78 +7,219 @@ datasource db {
 }
 
 model User {
-  id            String         @id @default(uuid())
+  id            String     @id @default(cuid())
   email         String         @unique
   password      String
   name          String
+  avatar        String?
   role          UserRole       @default(EMPLOYEE)
+  isActive      Boolean        @default(true)
+  department    String?
+  jobTitle      String?
+  phone         String?
+  lastLogin     DateTime?
+  githubLogin   String?   @unique  // GitHub username for webhook integration
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  tasks         Task[]
-  comments      Comment[]
-  activities    Activity[]
+
+  tasks         Task[]         @relation("TaskAssignee")
   teamMembers   TeamMember[]
+  commentsAuthored Comment[] @relation("CommentAuthor")
+  activities    Activity[]     @relation("ActivityAuthor")
   notifications Notification[]
+  refreshTokens RefreshToken[]
+  requestAccess RequestAccess?
+  authoredPRs   PullRequest[] @relation("PRAuthor")
+  reviewedPRs   PullRequest[] @relation("PRReviewer")
+  mergedPRs     PullRequest[] @relation("PRMerge")
+  authoredReviews CodeReview[] @relation("ReviewReviewer")
+  authoredCommits Commit[]     @relation("CommitAuthor")
+  authoredBranches Branch[]    @relation("BranchAuthor")
+  prReviewers   PRReviewer[]
+  sprintsCreated  Sprint[]    @relation("SprintCreatedBy")
+  epicsCreated    Epic[]      @relation("EpicCreatedBy")
+  attachments     Attachment[]
+  workLogs        WorkLog[]
+}
+
+model RequestAccess {
+  id          String       @id @default(cuid())
+  email       String
+  name        String
+  department  String?
+  jobTitle    String?
+  reason      String?
+  status      RequestStatus    @default(PENDING)
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  user        User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId      String?          @unique
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model RefreshToken {
+  id         String      @id @default(cuid())
+  tokenHash  String
+  userId     String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
 }
 
 model Project {
-  id          String   @id @default(uuid())
+  id          String      @id @default(cuid())
   name        String
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      ProjectStatus @default(ACTIVE)
+  startDate   DateTime?
+  endDate     DateTime?
+  githubRepoId String?
+  githubRepoUrl String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
   tasks       Task[]
+  epics       Epic[]
+  sprints     Sprint[]
+
+  @@index([status])
 }
 
 model Task {
-  id          String     @id @default(uuid())
-  title       String
-  description String?
-  status      TaskStatus @default(TODO)
-  assigneeId  String
-  projectId   String
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  assignee    User       @relation(fields: [assigneeId], references: [id])
-  project     Project    @relation(fields: [projectId], references: [id])
-  comments    Comment[]
-  activities  Activity[]
+  id            String       @id @default(cuid())
+  title         String
+  description   String?
+  status        TaskStatus    @default(TODO)
+  priority      TaskPriority  @default(MEDIUM)
+  startDate     DateTime?
+  dueDate       DateTime?
+  estimatedHours Float?
+  actualHours   Float?
+  storyPoints   Int?
+  tags          String[]      @default([])
+  projectId     String
+  assigneeId    String
+  createdById   String
+  parentTaskId  String?
+  epicId        String?
+  sprintId      String?
+  externalId    String?       // Jira issue ID
+  externalKey   String?       // Jira issue key (e.g., "PROJ-123")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  assignee       User          @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  project        Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  comments       Comment[]
+  activities     Activity[]
+  parentTask     Task?         @relation("SubTasks", fields: [parentTaskId], references: [id])
+  subTasks       Task[]        @relation("SubTasks")
+  epic           Epic?         @relation(fields: [epicId], references: [id], onDelete: SetNull)
+  sprint         Sprint?       @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  branches       Branch[]
+  pullRequests   PullRequest[]
+  commits        Commit[]
+  attachments    Attachment[]
+  workLogs       WorkLog[]
 
   @@index([assigneeId])
   @@index([projectId])
   @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+  @@index([parentTaskId])
+  @@index([epicId])
+  @@index([sprintId])
 }
 
 model Comment {
-  id        String   @id @default(uuid())
+  id        String      @id @default(cuid())
   content   String
   taskId    String
   authorId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  author    User     @relation(fields: [authorId], references: [id])
+  author    User     @relation("CommentAuthor", fields: [authorId], references: [id])
 
   @@index([taskId])
   @@index([authorId])
 }
 
+model TaskLink {
+  id           String   @id @default(cuid())
+  taskId       String
+  linkedTaskId String
+  linkType     LinkType @default(RELATES)
+  createdAt    DateTime @default(now())
+
+  @@unique([taskId, linkedTaskId])
+  @@index([taskId])
+  @@index([linkedTaskId])
+}
+
+model TaskWatcher {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([taskId, userId])
+  @@index([taskId])
+  @@index([userId])
+}
+
+model WorkLog {
+  id          String   @id @default(cuid())
+  taskId      String
+  userId      String
+  hours       Float
+  description String?
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([userId])
+}
+
 model Team {
-  id          String       @id @default(uuid())
+  id          String      @id @default(cuid())
   name        String       @unique
   description String?
+  department  String?
+  color       String?      @default("#3B82F6")
+  isActive    Boolean      @default(true)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+
   members     TeamMember[]
+
+  @@index([department])
 }
 
 model TeamMember {
-  id        String   @id @default(uuid())
+  id        String      @id @default(cuid())
   userId    String
   teamId    String
-  role      String   @default("MEMBER")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      TeamMemberRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
@@ -88,50 +229,265 @@ model TeamMember {
 }
 
 model Notification {
-  id        String             @id @default(uuid())
-  userId    String
-  title     String
-  message   String
-  type      NotificationType   @default(INFO)
-  read      Boolean            @default(false)
-  referenceId String?
+  id            String      @id @default(cuid())
+  userId        String
+  title         String
+  message       String
+  type          NotificationType @default(INFO)
+  read          Boolean          @default(false)
+  referenceId   String?
   referenceType String?
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
-  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([read])
 }
 
-model Activity {
-  id        String   @id @default(uuid())
-  userId    String
+model Epic {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  color       String?     @default("#6366F1")
+  status      EpicStatus  @default(PLANNING)
+  projectId   String
+  startDate   DateTime?
+  endDate     DateTime?
+  createdById String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator     User        @relation("EpicCreatedBy", fields: [createdById], references: [id])
+  tasks       Task[]
+  sprints     Sprint[]
+
+  @@index([projectId])
+  @@index([status])
+}
+
+model Sprint {
+  id          String       @id @default(cuid())
+  name        String
+  goal        String?
+  status      SprintStatus @default(PLANNING)
+  projectId   String
+  epicId      String?
+  startDate   DateTime?
+  endDate     DateTime?
+  createdById String
+  externalId  String?       // Jira sprint ID
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator     User        @relation("SprintCreatedBy", fields: [createdById], references: [id])
+  epic        Epic?       @relation(fields: [epicId], references: [id], onDelete: SetNull)
+  tasks       Task[]
+  branches    Branch[]
+
+  @@index([projectId])
+  @@index([epicId])
+  @@index([status])
+}
+
+model PullRequest {
+  id           String         @id @default(cuid())
+  title        String
+  description  String?
+  taskId       String
+  sourceBranch String
+  targetBranch String
+  status       PRStatus        @default(OPEN)
+  isDraft      Boolean        @default(false)
+  authorId     String
+  reviewerId   String?
+  mergedAt     DateTime?
+  mergedById   String?
+  githubPrId   String?         @unique
+  githubRepoId String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  task       Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author     User       @relation("PRAuthor", fields: [authorId], references: [id])
+  reviewer   User?      @relation("PRReviewer", fields: [reviewerId], references: [id])
+  mergedBy   User?      @relation("PRMerge", fields: [mergedById], references: [id])
+  reviews    CodeReview[]
+  commits    Commit[]
+  reviewers   PRReviewer[]
+
+  @@index([taskId])
+  @@index([status])
+  @@index([authorId])
+  @@index([reviewerId])
+}
+
+model PRReviewer {
+  id         String   @id @default(cuid())
+  prId       String
+  reviewerId String
+  status     ReviewStatus @default(PENDING)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  pullRequest PullRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
+  reviewer    User        @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([prId, reviewerId])
+  @@index([prId])
+  @@index([reviewerId])
+}
+
+model CodeReview {
+  id         String          @id @default(cuid())
+  prId       String
+  reviewerId String
+  status     ReviewStatus    @default(PENDING)
+  comments   String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  pullRequest PullRequest @relation(fields: [prId], references: [id], onDelete: Cascade)
+  reviewer    User        @relation("ReviewReviewer", fields: [reviewerId], references: [id])
+
+  @@unique([prId, reviewerId])
+  @@index([prId])
+}
+
+model Branch {
+  id        String      @id @default(cuid())
+  name      String
+  taskId    String
+  sprintId  String?
+  authorId  String
+  createdAt DateTime   @default(now())
+
+  task     Task     @relation(fields: [taskId], references: [id])
+  sprint   Sprint?  @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  author   User     @relation("BranchAuthor", fields: [authorId], references: [id])
+  commits  Commit[]
+
+  @@index([taskId])
+  @@index([sprintId])
+}
+
+model Commit {
+  id        String   @id @default(cuid())
+  message   String
+  branchId  String
+  authorId  String
   taskId    String?
-  action    String
-  entityType String
-  entityId  String
-  oldValue  String?
-  newValue  String?
+  prId      String?
+  sha       String   @unique
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  task      Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  branch      Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  author      User           @relation("CommitAuthor", fields: [authorId], references: [id])
+  task        Task?          @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  pullRequest PullRequest?   @relation(fields: [prId], references: [id], onDelete: SetNull)
+
+  @@index([branchId])
+  @@index([authorId])
+  @@index([taskId])
+  @@index([prId])
+}
+
+model Activity {
+  id         String      @id @default(cuid())
+  userId     String
+  taskId     String?
+  action     String
+  entityType String
+  entityId   String
+  oldValue   String?
+  newValue   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  user       User     @relation("ActivityAuthor", fields: [userId], references: [id])
+  task       Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([taskId])
   @@index([entityType])
+  @@index([createdAt])
+}
+
+model FailedWebhook {
+  id          String    @id @default(cuid())
+  eventType   String
+  payload     Json
+  error       String?
+  retryCount  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  @@index([eventType])
+  @@index([resolvedAt])
+  @@index([createdAt])
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  url       String
+  filename  String
+  mimetype  String
+  size      Int
+  taskId    String
+  userId    String
+  createdAt DateTime @default(now())
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([userId])
 }
 
 enum UserRole {
+  SUPER_ADMIN
   ADMIN
+  MANAGER
   EMPLOYEE
+  VIEWER
+}
+
+enum TeamMemberRole {
+  LEAD
+  MEMBER
 }
 
 enum TaskStatus {
   TODO
   IN_PROGRESS
+  IN_REVIEW
   DONE
   BLOCKED
+  CANCELLED
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  ARCHIVED
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum NotificationType {
@@ -143,4 +499,44 @@ enum NotificationType {
   TASK_UPDATED
   COMMENT_ADDED
   TEAM_INVITATION
+  PROJECT_ASSIGNED
+  DEADLINE_APPROACHING
+}
+
+enum LinkType {
+  BLOCKS
+  DEPENDS
+  DUPLICATES
+  RELATES
+}
+
+enum EpicStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum SprintStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum PRStatus {
+  OPEN
+  IN_REVIEW
+  APPROVED
+  CHANGES_REQUESTED
+  MERGED
+  CLOSED
+  DRAFT
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+  COMMENTED
 }

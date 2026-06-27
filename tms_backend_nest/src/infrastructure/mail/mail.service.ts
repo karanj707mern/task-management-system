@@ -1,48 +1,101 @@
 import { Injectable } from '@nestjs/common';
-import { AppLogger } from '../logger/app-logger.service';
-import { MailerService } from '@nestjs-modules/mailer';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { AppLogger } from '@/infrastructure/logger/app-logger.service';
+import * as jobDefs from '@/queues/jobs/job-definitions';
+import { EmailTemplates } from '@/shared/templates/email.templates';
 
-/**
- * Email service for sending emails
- * Currently logs to console - integrate with SMTP provider
- */
 @Injectable()
-export class MailService {
+export class EmailService {
   constructor(
     private readonly logger: AppLogger,
-    private readonly mailerService: MailerService,
+    @InjectQueue('email') private emailQueue: Queue<jobDefs.SendEmailJobData>,
   ) {}
 
+  private async enqueueEmail(data: jobDefs.SendEmailJobData) {
+    return this.emailQueue.add('send-email', data, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+      removeOnComplete: true,
+    });
+  }
+
   async sendWelcomeEmail(email: string, name: string): Promise<void> {
-    await this.mailerService.sendMail({
+    this.logger.log(`Queueing welcome email to ${email}`);
+    await this.enqueueEmail({
       to: email,
       subject: 'Welcome to Task Management System',
-      text: `Hello ${name}, welcome to our Task Management System!`,
+      template: 'welcome',
+      context: {
+        name,
+        html: EmailTemplates.welcomeEmail(name),
+      },
     });
-    this.logger.log(`Sending welcome email to ${email}`);
   }
 
   async sendTaskAssignmentEmail(
     email: string,
     taskTitle: string,
+    projectName?: string,
   ): Promise<void> {
-    await this.mailerService.sendMail({
+    this.logger.log(`Queueing task assignment email to ${email}`);
+    await this.enqueueEmail({
       to: email,
       subject: 'Task Assignment',
-      text: `You have been assigned a new task: ${taskTitle}`,
+      template: 'task-assigned',
+      context: {
+        name: email.split('@')[0],
+        taskTitle,
+        projectName: projectName || 'Unknown Project',
+        html: EmailTemplates.taskAssigned(
+          email.split('@')[0],
+          taskTitle,
+          projectName || 'Unknown Project',
+        ),
+      },
     });
-    this.logger.log(`Sending task assignment email to ${email}`);
   }
+
+  async sendTaskStatusChangeEmail(
+    email: string,
+    taskTitle: string,
+    oldStatus: string,
+    newStatus: string,
+  ): Promise<void> {
+    this.logger.log(`Queueing task status change email to ${email}`);
+    await this.enqueueEmail({
+      to: email,
+      subject: 'Task Status Updated',
+      template: 'task-status-changed',
+      context: {
+        name: email.split('@')[0],
+        taskTitle,
+        oldStatus,
+        newStatus,
+        html: EmailTemplates.taskStatusChanged(
+          email.split('@')[0],
+          taskTitle,
+          oldStatus,
+          newStatus,
+        ),
+      },
+    });
+  }
+
   async sendPasswordResetEmail(
     email: string,
     resetLink: string,
   ): Promise<void> {
-    await this.mailerService.sendMail({
+    this.logger.log(`Queueing password reset email to ${email}`);
+    await this.enqueueEmail({
       to: email,
       subject: 'Password Reset',
-      text: `Click the following link to reset your password: ${resetLink}`,
+      template: 'password-reset',
+      context: {
+        resetLink,
+        html: `Click the following link to reset your password: ${resetLink}`,
+      },
     });
-    this.logger.log(`Sending password reset email to ${email}`);
   }
 
   async sendNotificationEmail(
@@ -50,11 +103,16 @@ export class MailService {
     title: string,
     content: string,
   ): Promise<void> {
-    await this.mailerService.sendMail({
+    this.logger.log(`Queueing notification email to ${email}`);
+    await this.enqueueEmail({
       to: email,
       subject: title,
-      text: content,
+      template: 'notification',
+      context: {
+        title,
+        content,
+        html: content,
+      },
     });
-    this.logger.log(`Sending notification email to ${email}`);
   }
 }

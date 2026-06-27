@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/prisma/prisma.service';
+import { TeamMemberRole } from '@prisma/client';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
 
@@ -96,7 +97,7 @@ export class TeamRepository {
     });
   }
 
-  async addMember(teamId: string, userId: string, role: string = 'MEMBER') {
+  async addMember(teamId: string, userId: string, role: TeamMemberRole = TeamMemberRole.MEMBER) {
     return this.prisma.teamMember.create({
       data: {
         teamId,
@@ -133,6 +134,12 @@ export class TeamRepository {
     });
   }
 
+  async updateMemberRole(teamId: string, userId: string, role: TeamMemberRole) {
+    return this.prisma.teamMember.updateMany({
+      where: { teamId, userId },
+      data: { role },
+    });
+  }
   async getTeamMembers(teamId: string, skip: number, take: number) {
     return this.prisma.teamMember.findMany({
       where: { teamId },

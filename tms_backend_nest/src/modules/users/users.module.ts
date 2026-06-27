@@ -1,12 +1,17 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from '../../infrastructure/prisma/prisma.module';
-import { UsersService } from './users.service';
+
+import { PrismaModule } from '@/infrastructure/prisma/prisma.module';
+import { FileUploadModule } from '@/infrastructure/file-upload/file-upload.module';
+import { UserRepository } from './repositories/user.repository';
 import { UsersController } from './users.controller';
+import { AvatarUploadController } from './avatar-upload.controller';
+import { UsersService } from './users.service';
+import { UsersWebsocketsModule } from './websockets/users.websockets.module';
 
 @Module({
-  imports: [PrismaModule],
-  providers: [UsersService],
+  imports: [PrismaModule, FileUploadModule, UsersWebsocketsModule],
+  controllers: [UsersController, AvatarUploadController],
+  providers: [UsersService, UserRepository],
   exports: [UsersService],
-  controllers: [UsersController],
 })
 export class UsersModule {}

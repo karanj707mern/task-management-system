@@ -1,11 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { NotificationRepository } from './notifications.repository';
 import { IPaginationQuery } from '@/common/types/common.types';
-import { NotificationType } from '@prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { NotificationRepository } from './notifications.repository';
+
 export interface ICreateNotification {
   title: string;
   message: string;
-  type?: NotificationType;
+  type?: string;
   referenceId?: string;
   referenceType?: string;
 }
@@ -23,12 +24,12 @@ export class NotificationsService {
       type: data.type || 'INFO',
       referenceId: data.referenceId,
       referenceType: data.referenceType,
-    });
+    } as Omit<Prisma.NotificationCreateInput, 'user'>);
   }
 
-  async getNotification(id: string) {
+  async getNotification(id: string, userId: string) {
     const notification = await this.notificationRepository.findById(id);
-    if (!notification) {
+    if (!notification || notification.userId !== userId) {
       throw new NotFoundException('Notification not found');
     }
     return notification;
@@ -57,8 +58,8 @@ export class NotificationsService {
     };
   }
 
-  async markAsRead(id: string) {
-    await this.getNotification(id);
+  async markAsRead(id: string, userId: string) {
+    await this.getNotification(id, userId);
     return this.notificationRepository.markAsRead(id);
   }
 
@@ -66,8 +67,8 @@ export class NotificationsService {
     return this.notificationRepository.markAllAsRead(userId);
   }
 
-  async deleteNotification(id: string) {
-    await this.getNotification(id);
+  async deleteNotification(id: string, userId: string) {
+    await this.getNotification(id, userId);
     await this.notificationRepository.delete(id);
     return { message: 'Notification deleted successfully' };
   }

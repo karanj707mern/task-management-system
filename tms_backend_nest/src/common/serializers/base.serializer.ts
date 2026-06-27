@@ -1,22 +1,20 @@
-import {
-  ClassConstructor,
-  ClassTransformOptions,
-  plainToInstance,
-} from 'class-transformer';
+import { ClassTransformOptions, plainToInstance } from 'class-transformer';
 
 export class BaseSerializer<T> {
-  constructor(private readonly cls: ClassConstructor<T>) {}
-
-  serialize(response: T | T[], options?: ClassTransformOptions): T | T[] {
-    return plainToInstance(this.cls, response, {
-      excludeExtraneousValues: true,
-      ...options,
-    });
+  serialize(response: T | T[], options?: ClassTransformOptions): unknown {
+    return plainToInstance(
+      this.constructor as new (...args: unknown[]) => T,
+      response,
+      {
+        excludeExtraneousValues: true,
+        ...options,
+      },
+    );
   }
 }
 
 export class ApiResponseSerializer<T> {
-  serialize(data: T, message?: string): Record<string, any> {
+  serialize(data: T, message?: string): Record<string, unknown> {
     return {
       success: true,
       data,
@@ -30,7 +28,7 @@ export class ApiResponseSerializer<T> {
     total: number,
     page: number,
     limit: number,
-  ): Record<string, any> {
+  ): Record<string, unknown> {
     const totalPages = Math.ceil(total / limit);
     return {
       success: true,
@@ -45,11 +43,11 @@ export class ApiResponseSerializer<T> {
     };
   }
 
-  serializeError(message: string, error?: any): Record<string, unknown> {
+  serializeError(message: string, error?: unknown): Record<string, unknown> {
     return {
       success: false,
       message,
-      error: error ?? null,
+      error: error || null,
       timestamp: new Date().toISOString(),
     };
   }

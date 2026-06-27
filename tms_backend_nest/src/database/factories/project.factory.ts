@@ -1,30 +1,37 @@
-import { faker } from '@faker-js/faker';
-import type { Prisma } from '@prisma/client';
+type ProjectFactoryData = {
+  name: string;
+  description: string | null;
+};
 
-type ProjectFactoryData = Prisma.ProjectCreateInput;
 type ProjectFactoryOverrides = Partial<ProjectFactoryData>;
 
-/**
- * Project factory for generating test data
- */
+function generateName(): string {
+  const names = ['Project Alpha', 'Project Beta', 'Project Gamma', 'Project Delta', 'Project Epsilon'];
+  return names[Math.floor(Math.random() * names.length)]!;
+}
+
+function generateDescription(): string {
+  return 'Project description for testing purposes';
+}
+
 export class ProjectFactory {
-  static createProjectData(
+  static async createProjectData(
     overrides: ProjectFactoryOverrides = {},
-  ): ProjectFactoryData {
+  ): Promise<ProjectFactoryData> {
     return {
-      name: faker.company.name(),
-      description: faker.lorem.paragraph(),
+      name: generateName(),
+      description: generateDescription(),
       ...overrides,
     };
   }
 
-  static createMultiple(
+  static async createMultiple(
     count: number,
     overrides: ProjectFactoryOverrides = {},
-  ): ProjectFactoryData[] {
+  ): Promise<ProjectFactoryData[]> {
     const projects: ProjectFactoryData[] = [];
     for (let i = 0; i < count; i++) {
-      projects.push(this.createProjectData(overrides));
+      projects.push(await this.createProjectData(overrides));
     }
     return projects;
   }

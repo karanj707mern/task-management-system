@@ -1,8 +1,5 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
-/**
- * Exception for unauthorized access
- */
 export class UnauthorizedException extends HttpException {
   constructor(message: string = 'Unauthorized access') {
     super(

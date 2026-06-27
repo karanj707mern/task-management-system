@@ -1,33 +1,60 @@
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { AppLogger } from '../../infrastructure/logger/app-logger.service';
+import { EmailService } from '../../infrastructure/mail/mail.service';
 import * as payloads from '../payloads/event.payloads';
 
-/**
- * Task event listeners
- */
 @Injectable()
 export class TaskEventListener {
-  constructor(private logger: AppLogger) {}
+  constructor(
+    private logger: AppLogger,
+    private emailService: EmailService,
+  ) {}
 
   @OnEvent('task.created')
   handleTaskCreated(payload: payloads.TaskCreatedPayload) {
     this.logger.log(`Task created: ${payload.title}`, 'TaskEventListener');
-    // TODO: Send notification if assigned, update activity log, etc.
+    if (payload.assigneeEmail) {
+      void this.emailService
+        .sendTaskAssignmentEmail(
+          payload.assigneeEmail,
+          payload.title,
+          payload.projectName,
+        )
+        .catch((error) => {
+          this.logger.error(
+            `Failed to send task assignment email: ${error instanceof Error ? error.message : String(error)}`,
+            'TaskEventListener',
+          );
+        });
+    }
   }
 
   @OnEvent('task.updated')
   handleTaskUpdated(payload: payloads.TaskUpdatedPayload) {
     this.logger.log(`Task updated: ${payload.id}`, 'TaskEventListener');
-    // TODO: Update activity log, invalidate cache, notify team, etc.
   }
 
   @OnEvent('task.status.changed')
   handleTaskStatusChanged(payload: payloads.TaskStatusChangedPayload) {
     this.logger.log(
-      `Task status changed: ${payload.id} - ${payload.oldStatus} → ${payload.newStatus}`,
+      `Task status changed: ${payload.title} - ${payload.oldStatus} → ${payload.newStatus}`,
       'TaskEventListener',
     );
-    // TODO: Send notifications, update metrics, trigger workflows, etc.
+    if (payload.assigneeEmail) {
+      void this.emailService
+        .sendTaskStatusChangeEmail(
+          payload.assigneeEmail,
+          payload.title,
+          payload.oldStatus,
+          payload.newStatus,
+        )
+        .catch((error) => {
+          this.logger.error(
+            `Failed to send task status change email: ${error instanceof Error ? error.message : String(error)}`,
+            'TaskEventListener',
+          );
+        });
+    }
   }
 }

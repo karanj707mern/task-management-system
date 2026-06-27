@@ -8,12 +8,12 @@ export class NotificationRepository {
 
   async create(
     userId: string,
-    data: Omit<Prisma.NotificationUncheckedCreateInput, 'userId'>,
+    data: Omit<Prisma.NotificationCreateInput, 'user'>,
   ) {
     return this.prisma.notification.create({
       data: {
-        userId,
         ...data,
+        user: { connect: { id: userId } },
       },
     });
   }
@@ -46,21 +46,21 @@ export class NotificationRepository {
   }
 
   async markAsRead(id: string) {
-    return await this.prisma.notification.update({
+    return this.prisma.notification.update({
       where: { id },
       data: { read: true },
     });
   }
 
   async markAllAsRead(userId: string) {
-    return await this.prisma.notification.updateMany({
+    return this.prisma.notification.updateMany({
       where: { userId, read: false },
       data: { read: true },
     });
   }
 
   async delete(id: string) {
-    return await this.prisma.notification.delete({
+    return this.prisma.notification.delete({
       where: { id },
     });
   }

@@ -1,55 +1,69 @@
-import { faker } from '@faker-js/faker';
-import * as bcrypt from 'bcrypt';
-import { UserRole } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 export type UserFactoryData = {
   email: string;
   password: string;
   name: string;
-  role: UserRole;
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE' | 'VIEWER';
 };
 
-export type UserFactoryOverrides = Partial<UserFactoryData>;
+export type UserFactoryOverrides = Omit<Partial<UserFactoryData>, 'password'> & {
+  password: string;
+};
 
-/**
- * User factory for generating test data
- */
+function generateEmail(): string {
+  return `user_${Date.now()}_${Math.random().toString(36).substring(2)}@adiance.com`;
+}
+
+function generateName(email: string): string {
+  return email.split('@')[0];
+}
+
 export class UserFactory {
   static async createUserData(
-    overrides: UserFactoryOverrides = {},
+    overrides: UserFactoryOverrides,
   ): Promise<UserFactoryData> {
-    const password = 'Test@123456';
+    const { password, ...rest } = overrides;
+    const email = rest.email || generateEmail();
     const hashedPassword = await bcrypt.hash(password, 10);
 
     return {
-      email: faker.internet.email(),
+      email,
       password: hashedPassword,
-      name: faker.person.fullName(),
-      role: UserRole.EMPLOYEE,
-      ...overrides,
+      name: generateName(email),
+      role: 'EMPLOYEE',
+      ...rest,
     };
   }
 
   static async createMultiple(
     count: number,
-    overrides: UserFactoryOverrides = {},
+    overrides: UserFactoryOverrides,
   ): Promise<UserFactoryData[]> {
     const users: UserFactoryData[] = [];
+
     for (let i = 0; i < count; i++) {
       users.push(await this.createUserData(overrides));
     }
+
     return users;
   }
 
   static async createAdmin(
-    overrides: UserFactoryOverrides = {},
+    overrides: UserFactoryOverrides,
   ): Promise<UserFactoryData> {
-    return this.createUserData({ role: UserRole.ADMIN, ...overrides });
+    return this.createUserData({
+      role: 'ADMIN',
+      ...overrides,
+    });
   }
 
-  static async createManager(
-    overrides: UserFactoryOverrides = {},
+  static async createSuperAdmin(
+    overrides: UserFactoryOverrides,
   ): Promise<UserFactoryData> {
-    return this.createUserData({ role: UserRole.EMPLOYEE, ...overrides });
+    return this.createUserData({
+      role: 'SUPER_ADMIN',
+      ...overrides,
+    });
   }
 }

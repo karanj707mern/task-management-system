@@ -1,26 +1,44 @@
-/**
- * Application-wide constants
- */
-
 export enum UserRole {
-  ADMIN = 'admin',
-  MANAGER = 'manager',
-  USER = 'user',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMIN',
+  MANAGER = 'MANAGER',
+  EMPLOYEE = 'EMPLOYEE',
+  VIEWER = 'VIEWER',
 }
 
 export enum TaskStatus {
-  TODO = 'todo',
-  IN_PROGRESS = 'in_progress',
-  IN_REVIEW = 'in_review',
-  DONE = 'done',
-  ARCHIVED = 'archived',
+  TODO = 'TODO',
+  IN_PROGRESS = 'IN_PROGRESS',
+  IN_REVIEW = 'IN_REVIEW',
+  DONE = 'DONE',
+  BLOCKED = 'BLOCKED',
+  CANCELLED = 'CANCELLED',
 }
 
 export enum TaskPriority {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  URGENT = 'urgent',
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
+}
+
+export enum TeamMemberRole {
+  LEAD = 'LEAD',
+  MEMBER = 'MEMBER',
+}
+
+export enum ProjectStatus {
+  PLANNING = 'PLANNING',
+  ACTIVE = 'ACTIVE',
+  ON_HOLD = 'ON_HOLD',
+  COMPLETED = 'COMPLETED',
+  ARCHIVED = 'ARCHIVED',
+}
+
+export enum RequestStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
 }
 
 export enum ActivityType {
@@ -29,14 +47,6 @@ export enum ActivityType {
   DELETED = 'deleted',
   STATUS_CHANGED = 'status_changed',
   ASSIGNED = 'assigned',
-}
-
-export enum NotificationType {
-  TASK_ASSIGNED = 'task_assigned',
-  TASK_UPDATED = 'task_updated',
-  TEAM_INVITED = 'team_invited',
-  COMMENT_ADDED = 'comment_added',
-  PROJECT_SHARED = 'project_shared',
 }
 
 export const API_VERSION = 'v1';
