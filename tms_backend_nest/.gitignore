@@ -57,48 +57,5 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
 
-# Uploaded files
+# Uploaded files (not source code)
 /uploads/
-
-# Docker
-Dockerfile
-docker-compose.yml
-
-# Incomplete/unintegrated modules (pending future work)
-/src/modules/attachments/
-/src/modules/branches/
-/src/modules/code-reviews/
-/src/modules/commits/
-/src/modules/dashboard/
-/src/modules/epics/
-/src/modules/request-access/
-/src/modules/search/
-/src/modules/sprints/
-/src/modules/users/websockets/
-
-# Experimental infrastructure
-/src/cache/
-/src/events/
-/src/queues/
-/src/websocket/
-/src/mcp/
-/src/infrastructure/rabbitmq/
-/src/infrastructure/bullmq/
-/src/infrastructure/logger/
-/src/infrastructure/mail/
-
-# Experimental configs
-/src/config/mail.config.ts
-/src/config/rabbitmq.config.ts
-
-# Incomplete files
-/src/database/seed.ts
-/templates/
-.env.example
-
-src/modules/auth/auth.constants.ts
-src/modules/auth/dto/password-reset.dto.ts
-src/modules/tasks/dto/update-task.dto.ts
-
-src/modules/integrations/github/
-src/modules/pull-requests/
