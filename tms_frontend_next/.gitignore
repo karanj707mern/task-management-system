@@ -39,3 +39,30 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Incomplete/unstable frontend work (pending cleanup)
+/app/dashboard/
+/app/forgot-password/
+/app/request-access/
+/app/reset-password/
+/app/providers.tsx
+/components/layout/Sidebar.tsx
+/components/layout/TopBar.tsx
+/components/ui/
+/hooks/useAppTheme.ts
+/proxy.ts
+/services/branches.service.ts
+/services/code-reviews.service.ts
+/services/comments.service.ts
+/services/commits.service.ts
+/services/dashboard.service.ts
+/services/epics.service.ts
+/services/notifications.service.ts
+/services/pull-requests.service.ts
+/services/request-access.service.ts
+/services/sprints.service.ts
+/services/teams.service.ts
+/components.json
+/components/index.ts
+/components/types.ts
+/theme.ts
