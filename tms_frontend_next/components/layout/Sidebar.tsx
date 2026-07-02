@@ -2,20 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ROUTES } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
-import { useAppTheme, type ThemeVariant } from '@/hooks/useAppTheme';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from '@/components/ui/dropdown-menu';
+import { isAdministrator, type UserRole } from '@/types';
 import {
   LayoutDashboard,
   CheckSquare,
@@ -28,15 +20,10 @@ import {
   MessageSquare,
   Users,
   ShieldCheck,
-  Bell,
-  User,
-  Settings,
   Zap,
   ChevronDown,
   PanelLeftClose,
   PanelLeftOpen,
-  LogOut,
-  Palette,
   X,
 } from 'lucide-react';
 
@@ -89,35 +76,20 @@ const navGroups: NavGroup[] = [
       { label: 'Users', href: ROUTES.USERS, icon: <ShieldCheck className="h-5 w-5" />, adminOnly: true },
     ],
   },
-  {
-    title: 'User',
-    defaultOpen: false,
-    items: [
-      { label: 'Notifications', href: ROUTES.NOTIFICATIONS, icon: <Bell className="h-5 w-5" /> },
-      { label: 'Profile', href: ROUTES.PROFILE, icon: <User className="h-5 w-5" /> },
-      { label: 'Settings', href: ROUTES.SETTINGS, icon: <Settings className="h-5 w-5" /> },
-    ],
-  },
-];
-
-const themes: { value: ThemeVariant; label: string; description: string }[] = [
-  { value: 'slate', label: 'Slate', description: 'Cool blue-grey tones' },
-  { value: 'zinc', label: 'Zinc', description: 'Pure neutral grey' },
-  { value: 'neutral', label: 'Neutral', description: 'Warm minimal tones' },
 ];
 
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  mobileOpen?: boolean;
   onMobileClose: () => void;
   variant: 'desktop' | 'mobile';
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function Sidebar({ collapsed, onToggle, mobileOpen: _mobileOpen, onMobileClose, variant: sidebarVariant }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, onMobileClose, variant: sidebarVariant }: SidebarProps) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
-  const { theme, setTheme, variant, setVariant } = useAppTheme();
+  const router = useRouter();
+  const { user } = useAuth();
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -137,7 +109,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen: _mobileOpen, onMobile
   const visibleNavGroups = navGroups
     .map((g) => ({
       ...g,
-      items: g.items.filter((item) => !item.adminOnly || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN'),
+      items: g.items.filter((item) => !item.adminOnly || isAdministrator(user?.role as UserRole)),
     }))
     .filter((g) => g.items.length > 0);
 
@@ -146,7 +118,7 @@ export function Sidebar({ collapsed, onToggle, mobileOpen: _mobileOpen, onMobile
   const renderNav = () => (
     <div className="flex flex-col h-full">
       <div className={cn('flex items-center gap-3 px-3 py-4', compact && 'justify-center px-2')}>
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
           <Zap className="h-5 w-5" />
         </span>
         {!compact && (
@@ -178,15 +150,18 @@ export function Sidebar({ collapsed, onToggle, mobileOpen: _mobileOpen, onMobile
             <div className={cn('space-y-0.5', compact ? '' : openGroups[group.title] ? '' : 'hidden')}>
               {group.items.map((item) => {
                 const active = isActive(item.href);
-                const link = (
+                return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={onMobileClose}
+                    onClick={() => {
+                      onMobileClose();
+                      router.push(item.href);
+                    }}
                     className={cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2.5 text-base font-medium transition-colors',
-                      'hover:bg-accent hover:text-accent-foreground',
-                      active ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
+                      'flex items-center gap-3 rounded-lg px-3 py-2.5 text-base font-medium transition-all duration-200',
+                      'hover:bg-accent/80 hover:text-accent-foreground',
+                      active ? 'bg-primary/10 text-primary shadow-sm ring-1 ring-primary/10' : 'text-muted-foreground',
                       compact && 'justify-center px-2',
                     )}
                   >
@@ -194,69 +169,11 @@ export function Sidebar({ collapsed, onToggle, mobileOpen: _mobileOpen, onMobile
                     {!compact && <span className="truncate">{item.label}</span>}
                   </Link>
                 );
-
-                if (compact) {
-                  return link;
-                }
-                return link;
               })}
             </div>
           </div>
         ))}
       </nav>
-
-      <div className={cn('border-t border-border p-3 space-y-2', compact && 'p-2 space-y-1')}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className={cn('w-full', compact && 'h-8 w-8 p-0 justify-center')}>
-              <Palette className="h-4 w-4" />
-              {!compact && <span className="ml-2">Theme</span>}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="center" className="w-48">
-            <DropdownMenuRadioGroup value={variant} onValueChange={(val) => setVariant(val as ThemeVariant)}>
-              {themes.map((th) => (
-                <DropdownMenuRadioItem key={th.value} value={th.value}>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-medium">{th.label}</span>
-                    <span className="text-xs text-muted-foreground">{th.description}</span>
-                  </div>
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {!compact && (
-          <>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                {theme === 'dark' ? 'Light' : 'Dark'}
-              </Button>
-              <Button variant="destructive" size="sm" className="flex-1" onClick={async () => { await logout(); window.location.href = ROUTES.LOGIN; }}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-            <div className="flex items-center gap-2 pt-2 border-t border-border mt-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar || ''} alt={user?.name || 'User'} />
-                <AvatarFallback className="text-xs">{user?.name?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
     </div>
   );
 

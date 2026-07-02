@@ -4,12 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
+import { useAppTheme } from '@/hooks/useAppTheme';
 import { ROUTES, ERROR_MESSAGES } from '@/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ShieldCheck, Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { ShieldCheck, Eye, EyeOff, Mail, Lock, Sun, Moon } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,6 +20,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
+  const { theme, setTheme } = useAppTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,11 +54,23 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
       <div className="absolute inset-0 bg-grid-slate-200/60 dark:bg-grid-slate-700/40 bg-[bottom_1px_center] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
 
+      <div className="absolute top-4 right-4 z-20">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="rounded-full border-border/70 bg-background/70 hover:bg-accent/60 shadow-sm"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
+      </div>
+
       <div className="relative z-10 w-full max-w-[440px] mx-4">
-        <div className="rounded-2xl border border-border/60 bg-white/70 dark:bg-slate-900/70 shadow-2xl backdrop-blur-xl p-8 sm:p-10">
+        <div className="rounded-2xl border border-border/60 bg-card/80 shadow-2xl backdrop-blur-xl p-8 sm:p-10">
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-600/20 mb-5">
-              <ShieldCheck className="w-7 h-7 text-white" />
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg mb-5">
+              <ShieldCheck className="w-7 h-7" />
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome back</h1>
             <p className="text-muted-foreground mt-2 text-sm">Sign in to your workspace</p>

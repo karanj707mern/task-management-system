@@ -1,6 +1,6 @@
 import { apiClient } from '@/lib/api-client';
-import { Notification } from '@/types';
 import { generateQueryString } from '@/lib/utils';
+import { Notification } from '@/types';
 
 export interface NotificationFilters {
   page?: number;

@@ -1,4 +1,6 @@
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000/api/v1';
+// Backend origin without the /api/v1 prefix — used for static asset URLs (e.g. avatars)
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || API_BASE_URL.replace(/\/api\/v1\/?$/, '') || 'http://localhost:5000';
 
 export const ROUTES = {
   HOME: '/',

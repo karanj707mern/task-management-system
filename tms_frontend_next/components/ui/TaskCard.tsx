@@ -1,6 +1,6 @@
 'use client';
 
-import { cn, formatDate, getStatusColor } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 import { Calendar, Flag, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -12,12 +12,31 @@ interface TaskCardProps {
   isDragging?: boolean;
 }
 
+const STATUS_COLORS: Record<TaskStatus, { bg: string; dot: string }> = {
+  TODO: { bg: 'bg-sky-50 dark:bg-sky-950/20', dot: 'bg-sky-500 dark:bg-sky-400' },
+  IN_PROGRESS: { bg: 'bg-blue-50 dark:bg-blue-950/20', dot: 'bg-blue-500 dark:bg-blue-400' },
+  IN_REVIEW: { bg: 'bg-amber-50 dark:bg-amber-950/20', dot: 'bg-amber-500 dark:bg-amber-400' },
+  DONE: { bg: 'bg-emerald-50 dark:bg-emerald-950/20', dot: 'bg-emerald-500 dark:bg-emerald-400' },
+  BLOCKED: { bg: 'bg-rose-50 dark:bg-rose-950/20', dot: 'bg-rose-500 dark:bg-rose-400' },
+  CANCELLED: { bg: 'bg-slate-50 dark:bg-slate-950/20', dot: 'bg-slate-500 dark:bg-slate-400' },
+};
+
+function StatusIndicator({ status }: { status: TaskStatus }) {
+  const colors = STATUS_COLORS[status];
+  return (
+    <div className={cn('flex items-center gap-1.5 px-2 py-1 rounded-full', colors.bg)}>
+      <span className={cn('h-2 w-2 rounded-full', colors.dot)} />
+      <span className="text-xs font-medium text-foreground">{status.replace('_', ' ')}</span>
+    </div>
+  );
+}
+
 export function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
   const priorityColors: Record<TaskPriority, string> = {
-    LOW: 'text-emerald-500',
-    MEDIUM: 'text-amber-500',
-    HIGH: 'text-orange-500',
-    URGENT: 'text-red-500',
+    LOW: 'text-emerald-600 dark:text-emerald-400',
+    MEDIUM: 'text-amber-600 dark:text-amber-400',
+    HIGH: 'text-orange-600 dark:text-orange-400',
+    URGENT: 'text-red-600 dark:text-red-400',
   };
 
   const dueDate = task.dueDate ? new Date(task.dueDate) : null;
@@ -40,9 +59,7 @@ export function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
         <h4 className="font-medium text-card-foreground line-clamp-2 group-hover:text-primary transition-colors">
           {task.title}
         </h4>
-        <span className={cn('flex-shrink-0 px-2 py-1 text-xs font-medium rounded-full', getStatusColor(task.status))}>
-          {task.status.replace('_', ' ')}
-        </span>
+        <StatusIndicator status={task.status} />
       </div>
 
       {task.description && (
@@ -52,7 +69,7 @@ export function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {task.assignee ? (
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-bold text-white">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
               {task.assignee.name?.charAt(0).toUpperCase() || '?'}
             </div>
           ) : (

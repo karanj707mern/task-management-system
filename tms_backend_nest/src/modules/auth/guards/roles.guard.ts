@@ -4,6 +4,9 @@ import { Reflector } from '@nestjs/core';
 
 import { Request } from 'express';
 
+import { UserRole } from '@prisma/client';
+
+import { hasRoleAccess } from '../../../common/authorization/authorization';
 import { ROLES_KEY } from '../../../common/decorators/roles.decorator';
 
 interface AuthUser {
@@ -31,7 +34,12 @@ export class RolesGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<RequestWithUser>();
+    const userRole = request.user?.role as UserRole | undefined;
 
-    return requiredRoles.includes(request.user.role);
+    if (!userRole) {
+      return false;
+    }
+
+    return hasRoleAccess(userRole, requiredRoles as UserRole[]);
   }
 }

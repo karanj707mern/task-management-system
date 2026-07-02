@@ -1,5 +1,38 @@
 export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'EMPLOYEE' | 'VIEWER';
 
+export const ROLE_LEVELS: Record<UserRole, number> = {
+  VIEWER: 0,
+  EMPLOYEE: 1,
+  MANAGER: 2,
+  ADMIN: 3,
+  SUPER_ADMIN: 4,
+};
+
+export function hasRoleAccess(userRole: UserRole | undefined, requiredRoles: UserRole[]) {
+  if (!userRole) return false;
+  const userLevel = ROLE_LEVELS[userRole] ?? -1;
+  return requiredRoles.some((requiredRole) => {
+    const requiredLevel = ROLE_LEVELS[requiredRole] ?? -1;
+    return userLevel >= requiredLevel;
+  });
+}
+
+export function isAdministrator(userRole: UserRole | undefined) {
+  return hasRoleAccess(userRole, ['ADMIN']);
+}
+
+export function isManagerOrAbove(userRole: UserRole | undefined) {
+  return hasRoleAccess(userRole, ['MANAGER']);
+}
+
+export function isEmployeeOrAbove(userRole: UserRole | undefined) {
+  return hasRoleAccess(userRole, ['EMPLOYEE']);
+}
+
+export function isGuest(userRole: UserRole | undefined) {
+  return userRole === 'VIEWER';
+}
+
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'IN_REVIEW' | 'DONE' | 'BLOCKED' | 'CANCELLED';
 
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';

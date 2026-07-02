@@ -59,27 +59,23 @@ export class AuthService {
 
   getCookie(name: string, value: string, maxAge: number): string {
     const isProduction = this.configService.get('NODE_ENV') === 'production';
+    // Note: Chrome requires Secure flag for Partitioned cookies (always add Secure for cross-origin)
+    // SameSite=None requires Secure in modern browsers
     const cookieOptions = [
       `${name}=${value}`,
       'HttpOnly',
-      'SameSite=Lax',
-      `Path=/`,
+      'SameSite=None',
+      'Secure',
+      'Path=/',
       `Max-Age=${maxAge}`,
+      'Partitioned',
     ];
-
-    if (isProduction) {
-      cookieOptions.push('Secure');
-    }
 
     return cookieOptions.join('; ');
   }
 
   clearCookie(name: string): string {
-    const isProduction = this.configService.get('NODE_ENV') === 'production';
-    const options = ['HttpOnly', 'SameSite=Lax', 'Path=/', 'Max-Age=0'];
-    if (isProduction) {
-      options.push('Secure');
-    }
+    const options = ['HttpOnly', 'SameSite=None', 'Secure', 'Path=/', 'Max-Age=0', 'Partitioned'];
     return `${name}=; ${options.join('; ')}`;
   }
 

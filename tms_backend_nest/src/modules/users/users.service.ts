@@ -4,7 +4,8 @@ import { UsersQueryDto } from '@/common/dto/pagination-query.dto';
 import { CreateManualUserDto } from './dto/user.dto';
 import { UserRole } from '@prisma/client';
 import { CreateUserData, UpdateUserData } from './repositories/user.repository';
-import { assertRole, isManagerOrAbove } from '@/common/authorization/authorization';
+import { isManagerOrAbove } from '@/common/authorization/authorization';
+import { Permission, PermissionService } from '@/shared/permissions/permission.service';
 
 export interface UserQuery {
   search?: string;
@@ -16,7 +17,10 @@ export interface UserQuery {
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    private readonly permissionService: PermissionService,
+  ) {}
 
   async findByEmail(email: string) {
     return this.userRepository.findByEmail(email);
@@ -34,15 +38,13 @@ export class UsersService {
   }
 
   async createManualUser(data: CreateManualUserDto, creatorRole: UserRole) {
-    if (!['ADMIN', 'SUPER_ADMIN'].includes(creatorRole)) {
-      throw new NotFoundException('Not authorized');
-    }
+    this.permissionService.checkPermission(creatorRole, Permission.MANAGE_USERS);
     const existing = await this.userRepository.findByEmail(data.email);
     if (existing) {
       throw new ConflictException('Email already exists');
     }
-    const role = data.role || 'EMPLOYEE';
-    if (role === 'SUPER_ADMIN' && creatorRole !== 'SUPER_ADMIN') {
+    const role = (data.role as UserRole) || UserRole.EMPLOYEE;
+    if (role === UserRole.SUPER_ADMIN && creatorRole !== UserRole.SUPER_ADMIN) {
       throw new NotFoundException('Only Super Admin can create Super Admin users');
     }
     const userData: CreateUserData = {
@@ -53,7 +55,9 @@ export class UsersService {
     return this.userRepository.create(userData);
   }
 
-  async findAll(query: UsersQueryDto) {
+  async findAll(query: UsersQueryDto, requesterRole: UserRole) {
+    this.permissionService.checkPermission(requesterRole, Permission.READ_USER);
+
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
@@ -90,11 +94,13 @@ export class UsersService {
   }
 
   async update(id: string, data: UpdateUserData, updaterRole: UserRole) {
+    this.permissionService.checkPermission(updaterRole, Permission.MANAGE_USERS);
+
     const existing = await this.userRepository.findById(id);
     if (!existing) {
       throw new NotFoundException('User not found');
     }
-    if (data.role === 'SUPER_ADMIN' && updaterRole !== 'SUPER_ADMIN') {
+    if (data.role === UserRole.SUPER_ADMIN && updaterRole !== UserRole.SUPER_ADMIN) {
       throw new NotFoundException('Only Super Admin can assign Super Admin role');
     }
     return this.userRepository.update(id, data);
@@ -108,11 +114,13 @@ export class UsersService {
   }
 
   async remove(id: string, requesterRole: UserRole, requesterId: string) {
+    this.permissionService.checkPermission(requesterRole, Permission.MANAGE_USERS);
+
     const user = await this.userRepository.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    if (user.role === 'SUPER_ADMIN' && requesterRole !== 'SUPER_ADMIN') {
+    if (user.role === UserRole.SUPER_ADMIN && requesterRole !== UserRole.SUPER_ADMIN) {
       throw new NotFoundException('Only Super Admin can remove Super Admin users');
     }
     if (user.id === requesterId) {

@@ -43,14 +43,14 @@ export class UsersController {
   }
 
   @Get()
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('MANAGER', 'ADMIN', 'SUPER_ADMIN', 'EMPLOYEE', 'VIEWER')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  findAll(@Query() query: UsersQueryDto) {
-    return this.usersService.findAll(query);
+  findAll(@GetUser('role') requesterRole: UserRole, @Query() query: UsersQueryDto) {
+    return this.usersService.findAll(query, requesterRole);
   }
 
   @Get('admin')
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('MANAGER', 'ADMIN', 'SUPER_ADMIN')
   @UseGuards(JwtAuthGuard, RolesGuard)
   adminRoute() {
     return {
@@ -67,7 +67,7 @@ export class UsersController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('MANAGER', 'ADMIN', 'SUPER_ADMIN')
   @UseGuards(JwtAuthGuard, RolesGuard)
   create(@GetUser('role') creatorRole: UserRole, @Body() dto: CreateManualUserDto) {
     return this.usersService.createManualUser(dto, creatorRole);
@@ -75,7 +75,7 @@ export class UsersController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('MANAGER', 'ADMIN', 'SUPER_ADMIN')
   update(@GetUser('role') updaterRole: UserRole, @Param('id', ParseCuidPipe) id: string, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto, updaterRole);
   }
@@ -90,7 +90,7 @@ export class UsersController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'SUPER_ADMIN')
+  @Roles('MANAGER', 'ADMIN', 'SUPER_ADMIN')
   remove(
     @GetUser('role') requesterRole: UserRole,
     @GetUser('userId') requesterId: string,

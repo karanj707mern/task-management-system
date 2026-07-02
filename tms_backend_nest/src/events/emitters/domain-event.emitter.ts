@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional, Inject } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RabbitMQProducer } from '../../infrastructure/rabbitmq/rabbitmq.producer';
 import * as payloads from '../payloads/event.payloads';
@@ -7,10 +7,11 @@ import * as payloads from '../payloads/event.payloads';
 export class DomainEventEmitter {
   constructor(
     private eventEmitter: EventEmitter2,
-    private rabbitMQProducer: RabbitMQProducer,
+    @Optional() @Inject(RabbitMQProducer) private rabbitMQProducer: RabbitMQProducer,
   ) {}
 
   private publishToRabbitMQ(event: string, payload: unknown): void {
+    if (!this.rabbitMQProducer) return;
     void this.rabbitMQProducer
       .publishEvent(event, { event, payload, timestamp: new Date().toISOString() })
       .catch(() => {});

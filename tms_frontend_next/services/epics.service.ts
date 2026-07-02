@@ -1,6 +1,6 @@
 import { apiClient } from '@/lib/api-client';
-import { Epic } from '@/types';
 import { generateQueryString } from '@/lib/utils';
+import { Epic } from '@/types';
 
 export interface EpicFilters {
   page?: number;

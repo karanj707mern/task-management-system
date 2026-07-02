@@ -1,10 +1,12 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppTheme, type ThemeVariant } from '@/hooks/useAppTheme';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,13 +20,18 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
-import { Menu, Palette, Zap, ChevronDown, LogOut, User, Settings } from 'lucide-react';
-import { ROUTES } from '@/constants';
+import { Menu, Palette, Zap, ChevronDown, LogOut, User, Settings, Bell } from 'lucide-react';
+import { ROUTES, BACKEND_URL } from '@/constants';
+import { notificationService } from '@/services/notifications.service';
 
 const themes: { value: ThemeVariant; label: string; description: string }[] = [
   { value: 'slate', label: 'Slate', description: 'Cool blue-grey tones' },
   { value: 'zinc', label: 'Zinc', description: 'Pure neutral grey' },
   { value: 'neutral', label: 'Neutral', description: 'Warm minimal tones' },
+  { value: 'blue', label: 'Ocean Blue', description: 'Rich oceanic blues' },
+  { value: 'green', label: 'Forest', description: 'Natural green tones' },
+  { value: 'violet', label: 'Violet', description: 'Creative purple hues' },
+  { value: 'rose', label: 'Rose', description: 'Warm rose accents' },
 ];
 
 interface TopBarProps {
@@ -35,6 +42,16 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const { user, logout } = useAuth();
   const { theme, setTheme, variant, setVariant } = useAppTheme();
   const pathname = usePathname();
+  const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    notificationService.getUnreadCount().then((res) => {
+      if (!cancelled) setUnreadCount(res.unread);
+    });
+    return () => { cancelled = true; };
+  }, [pathname]);
 
   const getPageTitle = () => {
     const segments = pathname.split('/').filter(Boolean);
@@ -58,6 +75,41 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
         {/* Right */}
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground h-11 w-11 relative"
+            onClick={() => router.push(ROUTES.NOTIFICATIONS)}
+            aria-label="Notifications"
+          >
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <Badge className="absolute -top-0.5 -right-0.5 h-5 min-w-5 rounded-full px-1 text-[10px] font-semibold">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </Badge>
+            )}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground h-11 w-11"
+            onClick={() => router.push(ROUTES.PROFILE)}
+            aria-label="Profile"
+          >
+            <User className="h-5 w-5" />
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground h-11 w-11"
+            onClick={() => router.push(ROUTES.SETTINGS)}
+            aria-label="Settings"
+          >
+            <Settings className="h-5 w-5" />
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="text-muted-foreground h-11 w-11" aria-label="Theme options">
@@ -102,7 +154,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="gap-2 h-11">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.avatar || ''} alt={user?.name || 'User'} />
+                  <AvatarImage src={user?.avatar ? `${BACKEND_URL}${user.avatar}` : ''} alt={user?.name || 'User'} />
                   <AvatarFallback className="text-sm">{user?.name?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
                 </Avatar>
                 <span className="text-base font-medium hidden lg:inline">{user?.name || 'User'}</span>
@@ -117,16 +169,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => { window.location.href = ROUTES.PROFILE; }}>
-                <User className="mr-2 h-5 w-5" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { window.location.href = ROUTES.SETTINGS; }}>
-                <Settings className="mr-2 h-5 w-5" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={async () => { await logout(); window.location.href = ROUTES.LOGIN; }} className="text-destructive">
+              <DropdownMenuItem onClick={async () => { await logout(); router.push(ROUTES.LOGIN); }} className="text-destructive">
                 <LogOut className="mr-2 h-5 w-5" />
                 Logout
               </DropdownMenuItem>

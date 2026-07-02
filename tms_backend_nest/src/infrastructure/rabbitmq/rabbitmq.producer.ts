@@ -1,4 +1,5 @@
-import { Inject, Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { AppLogger } from '../logger/app-logger.service';
 import * as amqplib from 'amqplib';
 
 export interface RabbitMQMessage {
@@ -10,7 +11,7 @@ export interface RabbitMQMessage {
 
 @Injectable()
 export class RabbitMQProducer implements OnModuleInit {
-  private readonly logger = new Logger(RabbitMQProducer.name);
+  private readonly logger = new AppLogger(RabbitMQProducer.name);
   private exchange = 'tms.events';
 
   constructor(

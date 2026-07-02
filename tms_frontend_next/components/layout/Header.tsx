@@ -3,10 +3,11 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { ROUTES } from '@/constants';
+import { ROUTES, BACKEND_URL } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppTheme, type ThemeVariant } from '@/hooks/useAppTheme';
 import { Button } from '@/components/ui/button';
+import { isAdministrator } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -104,9 +105,7 @@ export function Header() {
     { label: 'Settings', href: ROUTES.SETTINGS, icon: <Settings className="h-4 w-4" />, group: 'User' },
   ];
 
-  const visibleNavItems = navItems.filter(
-    (item) => !item.adminOnly || user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN',
-  );
+  const visibleNavItems = navItems.filter((item) => !item.adminOnly || isAdministrator(user?.role as any));
 
   const primaryItems = visibleNavItems.filter((item) => PRIMARY_ITEMS.has(item.label));
   const moreItems = visibleNavItems.filter((item) => !PRIMARY_ITEMS.has(item.label));
@@ -132,7 +131,7 @@ export function Header() {
     >
       <nav className="mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href={isAuthenticated ? ROUTES.DASHBOARD : ROUTES.HOME} className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
             <Zap className="h-5 w-5" />
           </span>
           <div className="hidden sm:block">
@@ -193,7 +192,7 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="gap-2 h-9">
                     <Avatar className="h-7 w-7">
-                      <AvatarImage src={user?.avatar || ''} alt={user?.name || 'User'} />
+                      <AvatarImage src={user?.avatar ? `${BACKEND_URL}${user.avatar}` : ''} alt={user?.name || 'User'} />
                       <AvatarFallback className="text-xs">{user?.name?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
                     </Avatar>
                     <span className="text-sm font-medium hidden lg:inline">{user?.name || 'User'}</span>
@@ -292,7 +291,7 @@ export function Header() {
           <div className="flex flex-col h-full overflow-y-auto">
             <div className="flex items-center gap-3 rounded-2xl bg-muted/50 p-4 mx-4 mt-4">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={user?.avatar || ''} alt={user?.name || 'User'} />
+                <AvatarImage src={user?.avatar ? `${BACKEND_URL}${user.avatar}` : ''} alt={user?.name || 'User'} />
                 <AvatarFallback>{user?.name?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
               <div>

@@ -13,6 +13,7 @@ import {
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
+import { ArchiveTaskDto } from './dto/archive-task.dto';
 import { CreateWorkLogDto, LinkTasksDto } from './dto/task.dto';
 import { TasksQueryDto } from '@/common/dto/pagination-query.dto';
 import { TasksService } from './tasks.service';
@@ -20,9 +21,11 @@ import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { GetUser } from '@/common/decorators/get-user.decorator';
 import { ParseCuidPipe } from '@/common/pipes/parse-cuid.pipe';
 import { UserRole } from '@prisma/client';
+import { Roles } from '@/common/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
 
 @Controller('tasks')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
@@ -80,12 +83,24 @@ export class TasksController {
   }
 
   @Delete(':id')
+  @Roles('SUPER_ADMIN', 'ADMIN')
   remove(
     @Param('id', ParseCuidPipe) id: string,
     @GetUser('userId') userId: string,
     @GetUser('role') role: UserRole,
   ) {
     return this.tasksService.remove(id, userId, role);
+  }
+
+  @Patch(':id/archive')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MANAGER')
+  archive(
+    @Param('id', ParseCuidPipe) id: string,
+    @Body() dto: ArchiveTaskDto,
+    @GetUser('userId') userId: string,
+    @GetUser('role') role: UserRole,
+  ) {
+    return this.tasksService.archive(id, dto, userId, role);
   }
 
   @Get(':id/links')

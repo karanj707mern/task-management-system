@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { authService } from '@/services/auth.service';
 import type { User } from '@/types';
 import { apiClient } from '@/lib/api-client';
@@ -19,7 +19,6 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const manuallyLoggedIn = useRef(false);
 
   const syncState = useCallback((nextUser: User | null, nextAuth: boolean, accessToken?: string) => {
     setUser(nextUser);
@@ -65,18 +64,18 @@ export function useAuth() {
   }, [syncState]);
 
   useEffect(() => {
-    checkAuth();
+    checkAuth().catch(() => {
+      // Auth failure is already handled inside checkAuth.
+    });
   }, [checkAuth]);
 
   const login = async (params: LoginParams): Promise<LoginResponse> => {
-    manuallyLoggedIn.current = true;
     const result = await authService.login(params);
     syncState(result.user, true, result.accessToken);
     return result;
   };
 
   const logout = async () => {
-    manuallyLoggedIn.current = false;
     try {
       await authService.logout();
     } catch {

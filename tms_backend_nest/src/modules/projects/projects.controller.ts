@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { ArchiveProjectDto } from './dto/archive-project.dto';
 import { ProjectsQueryDto } from '@/common/dto/pagination-query.dto';
 
 import { ProjectsService } from './projects.service';
@@ -56,7 +57,14 @@ export class ProjectsController {
     return this.projectsService.update(id, dto, role);
   }
   @Delete(':id')
+  @Roles('SUPER_ADMIN', 'ADMIN')
   remove(@Param('id', ParseCuidPipe) id: string, @GetUser('role') role: UserRole) {
     return this.projectsService.remove(id, role);
+  }
+
+  @Patch(':id/archive')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MANAGER')
+  archive(@Param('id', ParseCuidPipe) id: string, @Body() dto: ArchiveProjectDto, @GetUser('role') role: UserRole) {
+    return this.projectsService.archive(id, dto, role);
   }
 }

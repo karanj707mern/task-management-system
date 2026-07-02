@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { MailerModule, MailerService } from '@nestjs-modules/mailer';
-import { BullModule, Processor, WorkerHost } from '@nestjs/bullmq';
+import { BullModule, type Processor, type WorkerHost } from '@nestjs/bullmq';
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
@@ -10,14 +10,11 @@ import { LoggerModule } from '../../infrastructure/logger/logger.module';
 import * as jobDefs from '../../queues/jobs/job-definitions';
 import { EmailService } from './mail.service';
 
-@Processor('email')
-export class EmailProcessor extends WorkerHost {
+class EmailProcessor {
   constructor(
     private logger: AppLogger,
     private mailerService: MailerService,
-  ) {
-    super();
-  }
+  ) {}
 
   async process(
     job: Job<jobDefs.SendEmailJobData>,
@@ -38,7 +35,6 @@ export class EmailProcessor extends WorkerHost {
 
     try {
       await this.mailerService.sendMail(emailOptions);
-
       this.logger.log(`Email sent successfully to ${job.data.to}`);
       return { success: true };
     } catch (error) {

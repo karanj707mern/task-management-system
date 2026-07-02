@@ -1,5 +1,7 @@
 import { API_BASE_URL } from '@/constants';
 
+const AUTH_STATE_KEY = 'auth-state';
+
 export class ApiError extends Error {
   constructor(
     public statusCode: number,
@@ -32,7 +34,7 @@ export class ApiClient {
   private getStoredAccessToken(): string | null {
     if (this.accessToken) return this.accessToken;
     try {
-      const stored = sessionStorage.getItem('auth-state');
+      const stored = sessionStorage.getItem(AUTH_STATE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         return parsed?.accessToken || null;
@@ -62,6 +64,7 @@ export class ApiClient {
       ...options,
       headers,
       credentials: 'include',
+      cache: 'no-store',
     });
 
     if (response.status === 401 && retry && !url.includes('/auth/refresh')) {
@@ -74,7 +77,8 @@ export class ApiClient {
           this.setAccessToken(null);
           throw new ApiError(401, 'Session expired');
         }
-        const refreshBody = await refreshResponse.json();
+        const refreshText = await refreshResponse.text();
+        const refreshBody = refreshText ? JSON.parse(refreshText) : null;
         const newToken = refreshBody?.data?.accessToken || refreshBody?.accessToken;
         if (newToken) {
           this.setAccessToken(newToken);
@@ -105,7 +109,18 @@ export class ApiClient {
       return undefined as T;
     }
 
-    const body = await response.json();
+    const text = await response.text();
+    if (!text) {
+      return undefined as T;
+    }
+
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = { message: text };
+    }
+
     if (body && typeof body === 'object' && 'success' in body && body.success === true && 'data' in body) {
       return (body as { data: T }).data;
     }
@@ -149,13 +164,20 @@ export class ApiClient {
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
+    // Do NOT set Content-Type for FormData — the browser will set it
+    // automatically with the correct multipart boundary.
 
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'PATCH',
+    const url = `${API_BASE_URL}${path}`;
+    console.log('[API] upload() called:', url, 'headers:', Object.keys(headers), 'FormData entries:', Array.from(formData.entries()).map(([k, v]) => `${k}=${v instanceof File ? `File(${v.name}, ${v.size}B)` : v}`));
+
+    const response = await fetch(url, {
+      method: 'POST',
       headers,
       body: formData,
       credentials: 'include',
     });
+
+    console.log('[API] upload() response:', response.status, response.statusText);
 
     if (!response.ok) {
       let errorBody: { message?: string } = {};
@@ -175,7 +197,18 @@ export class ApiClient {
       return undefined as T;
     }
 
-    const body = await response.json();
+    const text = await response.text();
+    if (!text) {
+      return undefined as T;
+    }
+
+    let body: unknown;
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = { message: text };
+    }
+
     if (body && typeof body === 'object' && 'success' in body && body.success === true && 'data' in body) {
       return (body as { data: T }).data;
     }

@@ -1,4 +1,4 @@
-import { IPaginationQuery } from '@/common/types/common.types';
+import { PaginationQueryDto } from '@/common/dto/pagination-query.dto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { NotificationRepository } from './notifications.repository';
@@ -35,9 +35,9 @@ export class NotificationsService {
     return notification;
   }
 
-  async getUserNotifications(userId: string, query: IPaginationQuery) {
-    const page = query.page || 1;
-    const limit = query.limit || 10;
+  async getUserNotifications(userId: string, query: PaginationQueryDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
     const [notifications, total, unread] = await Promise.all([

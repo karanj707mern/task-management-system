@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AppLogger } from '../logger/app-logger.service';
 import * as amqplib from 'amqplib';
 import { RabbitMQConsumer } from './rabbitmq.consumer';
 import { RabbitMQProducer } from './rabbitmq.producer';
@@ -11,6 +12,7 @@ import { RabbitMQService } from './rabbitmq.service';
     {
       provide: 'RABBITMQ_CONNECTION',
       useFactory: async (config: ConfigService) => {
+        const logger = new AppLogger(RabbitMQModule.name);
         const url = config.get<string>('RABBITMQ_URL') || 'amqp://localhost:5672';
         const maxRetries = 5;
         const retryDelay = 3000;
@@ -23,13 +25,14 @@ import { RabbitMQService } from './rabbitmq.service';
             });
 
             connection.on('error', (err) => {
-              console.error('[RabbitMQ] Connection error:', err.message);
+              logger.error(`[RabbitMQ] Connection error: ${err.message}`);
             });
 
             connection.on('close', () => {
-              console.warn('[RabbitMQ] Connection closed, attempting reconnection...');
+              logger.warn('[RabbitMQ] Connection closed, attempting reconnection...');
             });
 
+            logger.log('[RabbitMQ] Connected successfully');
             return connection;
           } catch (error) {
             if (attempt === maxRetries) {

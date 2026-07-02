@@ -1,9 +1,10 @@
-import { Inject, Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
+import { AppLogger } from '../logger/app-logger.service';
 import * as amqplib from 'amqplib';
 
 @Injectable()
 export class RabbitMQConsumer implements OnModuleDestroy {
-  private readonly logger = new Logger(RabbitMQConsumer.name);
+  private readonly logger = new AppLogger(RabbitMQConsumer.name);
 
   constructor(
     @Inject('RABBITMQ_CHANNEL')

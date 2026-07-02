@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { userService } from '@/services/users.service';
-import { ROUTES } from '@/constants';
+import { ROUTES, BACKEND_URL } from '@/constants';
 import { formatDateTime, formatDateRelative } from '@/lib/utils';
 import type { User } from '@/types';
 import { User as UserIcon, Mail, Shield, Clock, Building2, Briefcase, Phone, CheckCircle, XCircle, Camera } from 'lucide-react';
@@ -86,6 +86,8 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    console.log('[AVATAR] File selected:', file.name, file.type, file.size);
+
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
       setError('Only JPEG, PNG, WebP, and GIF images are allowed.');
@@ -100,12 +102,15 @@ export default function ProfilePage() {
     setError(null);
     setSuccess(null);
     try {
+      console.log('[AVATAR] Uploading via userService.uploadAvatar...');
       const result = await userService.uploadAvatar(file);
+      console.log('[AVATAR] Upload result:', result);
       const updatedProfile = { ...profile!, avatar: result.avatarUrl };
       setProfile(updatedProfile);
       updateUser(updatedProfile);
       setSuccess('Avatar updated successfully.');
     } catch (err) {
+      console.error('[AVATAR] Upload error:', err);
       setError(err instanceof Error ? err.message : 'Failed to upload avatar.');
     } finally {
       setUploadingAvatar(false);
@@ -181,9 +186,16 @@ export default function ProfilePage() {
             <Card className="border-border/60 bg-card/80 backdrop-blur">
               <CardContent className="pt-6">
                 <div className="flex flex-col items-center text-center">
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold mb-4 shadow-lg overflow-hidden relative group">
+                   <div className="w-24 h-24 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-2xl font-bold mb-4 shadow-lg overflow-hidden relative group">
                     {profile.avatar ? (
-                      <Image src={profile.avatar} alt={profile.name} width={96} height={96} className="rounded-full object-cover w-full h-full" />
+                      <Image
+                        src={`${BACKEND_URL}${profile.avatar}`}
+                        alt={profile.name}
+                        width={96}
+                        height={96}
+                        className="rounded-full object-cover w-full h-full"
+                        unoptimized
+                      />
                     ) : (
                       profile.name?.charAt(0).toUpperCase() || <UserIcon className="w-10 h-10" />
                     )}

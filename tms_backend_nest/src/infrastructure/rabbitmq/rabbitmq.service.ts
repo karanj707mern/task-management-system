@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { AppLogger } from '../logger/app-logger.service';
 import { RabbitMQProducer } from './rabbitmq.producer';
 
 export interface EventPayload {
@@ -11,7 +12,7 @@ export interface EventPayload {
 
 @Injectable()
 export class RabbitMQService {
-  private readonly logger = new Logger(RabbitMQService.name);
+  private readonly logger = new AppLogger(RabbitMQService.name);
 
   constructor(private readonly producer: RabbitMQProducer) {}
 

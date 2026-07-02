@@ -1,8 +1,8 @@
 'use client';
 
 import { apiClient } from '@/lib/api-client';
-import { Project, ProjectStatus } from '@/types';
 import { generateQueryString } from '@/lib/utils';
+import { Project, ProjectStatus } from '@/types';
 
 export interface ProjectFilters {
   page?: number;

@@ -25,13 +25,22 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
   CANCELLED: 'Cancelled',
 };
 
-const STATUS_STYLES: Record<TaskStatus, { bg: string; text: string }> = {
-  TODO: { bg: 'bg-gray-100 dark:bg-gray-800/30', text: 'text-gray-700 dark:text-gray-300' },
-  IN_PROGRESS: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-300' },
-  IN_REVIEW: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-300' },
-  DONE: { bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-300' },
-  BLOCKED: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-300' },
-  CANCELLED: { bg: 'bg-slate-100 dark:bg-slate-800/30', text: 'text-slate-700 dark:text-slate-300' },
+const STATUS_DOT_COLORS: Record<TaskStatus, string> = {
+  TODO: 'bg-sky-500 dark:bg-sky-400',
+  IN_PROGRESS: 'bg-blue-500 dark:bg-blue-400',
+  IN_REVIEW: 'bg-amber-500 dark:bg-amber-400',
+  DONE: 'bg-emerald-500 dark:bg-emerald-400',
+  BLOCKED: 'bg-rose-500 dark:bg-rose-400',
+  CANCELLED: 'bg-slate-500 dark:bg-slate-400',
+};
+
+const STATUS_BG_COLORS: Record<TaskStatus, { bg: string; border: string }> = {
+  TODO: { bg: 'bg-sky-50/80 dark:bg-sky-950/20', border: 'border-sky-200/50 dark:border-sky-800/30' },
+  IN_PROGRESS: { bg: 'bg-blue-50/80 dark:bg-blue-950/20', border: 'border-blue-200/50 dark:border-blue-800/30' },
+  IN_REVIEW: { bg: 'bg-amber-50/80 dark:bg-amber-950/20', border: 'border-amber-200/50 dark:border-amber-800/30' },
+  DONE: { bg: 'bg-emerald-50/80 dark:bg-emerald-950/20', border: 'border-emerald-200/50 dark:border-emerald-800/30' },
+  BLOCKED: { bg: 'bg-rose-50/80 dark:bg-rose-950/20', border: 'border-rose-200/50 dark:border-rose-800/30' },
+  CANCELLED: { bg: 'bg-slate-50/80 dark:bg-slate-950/20', border: 'border-slate-200/50 dark:border-slate-700/30' },
 };
 
 function SortableTask({ task, onClick }: { task: Task; onClick: () => void }) {
@@ -50,6 +59,10 @@ function SortableTask({ task, onClick }: { task: Task; onClick: () => void }) {
       <TaskCard task={task} onClick={onClick} isDragging={isDragging} />
     </div>
   );
+}
+
+function StatusDot({ status }: { status: TaskStatus }) {
+  return <span className={cn('h-2.5 w-2.5 rounded-full', STATUS_DOT_COLORS[status])} />;
 }
 
 export function TaskBoard({ tasks, onTaskClick, onStatusChange }: TaskBoardProps) {
@@ -100,6 +113,7 @@ export function TaskBoard({ tasks, onTaskClick, onStatusChange }: TaskBoardProps
   return (
     <>
       <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        {/* Mobile: Tabs view */}
         <div className="block sm:hidden">
           <Tabs value={selectedStatus} onValueChange={(val) => setSelectedStatus(val as TaskStatus)} className="w-full">
             <TabsList className="flex w-full overflow-x-auto scrollbar-thin mb-4 bg-muted/50 p-1 rounded-lg">
@@ -108,25 +122,27 @@ export function TaskBoard({ tasks, onTaskClick, onStatusChange }: TaskBoardProps
                   key={status}
                   value={status}
                   className={cn(
-                    'flex-shrink-0 text-xs px-3 py-1.5 rounded-md transition-colors',
-                    STATUS_STYLES[status].bg,
-                    STATUS_STYLES[status].text,
+                    'flex-shrink-0 text-xs px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5',
+                    STATUS_BG_COLORS[status].bg,
+                    STATUS_BG_COLORS[status].border,
                     'data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800'
                   )}
                 >
-                  {STATUS_LABELS[status]} ({tasksByStatus[status].length})
+                  <StatusDot status={status} />
+                  <span>{STATUS_LABELS[status]}</span>
+                  <span className="text-xs opacity-70">({tasksByStatus[status].length})</span>
                 </TabsTrigger>
               ))}
             </TabsList>
             {STATUS_ORDER.map((status) => (
               <TabsContent key={status} value={status} className="mt-0">
-                <div className="bg-slate-50/50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700/50">
+                <div className="bg-card/80 rounded-xl border border-border/70 shadow-sm">
                   <div className="p-3 space-y-3">
                     {tasksByStatus[status].map((task) => (
                       <SortableTask key={task.id} task={task} onClick={() => onTaskClick(task)} />
                     ))}
                     {tasksByStatus[status].length === 0 && (
-                      <div className="flex items-center justify-center h-32 text-sm text-slate-400 dark:text-slate-500 italic">
+                      <div className="flex items-center justify-center h-32 text-sm text-muted-foreground italic">
                         No tasks
                       </div>
                     )}
@@ -137,27 +153,29 @@ export function TaskBoard({ tasks, onTaskClick, onStatusChange }: TaskBoardProps
           </Tabs>
         </div>
 
-        <div className="hidden sm:block -mx-2 sm:mx-0">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {STATUS_ORDER.filter(s => tasksByStatus[s].length > 0 || s === 'TODO').map((status) => (
+        {/* Desktop: Kanban board */}
+        <div className="hidden sm:block">
+          <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            {STATUS_ORDER.map((status) => (
               <div
                 key={status}
                 id={status}
-                className="bg-slate-50/50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700/50 flex flex-col min-h-[320px] sm:min-h-[400px]"
+                className={cn(
+                  'rounded-xl border border-border/70 shadow-sm flex flex-col min-h-[320px] sm:min-h-[400px]',
+                  STATUS_BG_COLORS[status].bg
+                )}
               >
                 <div
                   className={cn(
-                    'px-4 py-3 border-b border-slate-200 dark:border-slate-700/50 font-medium text-sm',
-                    STATUS_STYLES[status].bg,
-                    STATUS_STYLES[status].text,
+                    'px-4 py-3 border-b font-medium text-sm flex items-center gap-2',
+                    STATUS_BG_COLORS[status].border
                   )}
                 >
-                  <div className="flex items-center justify-between">
-                    <span>{STATUS_LABELS[status]}</span>
-                    <span className="text-xs font-normal bg-white/80 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
-                      {tasksByStatus[status].length}
-                    </span>
-                  </div>
+                  <StatusDot status={status} />
+                  <span className="text-foreground">{STATUS_LABELS[status]}</span>
+                  <span className="ml-auto text-xs font-normal bg-white/80 dark:bg-slate-800/80 px-2 py-0.5 rounded-full">
+                    {tasksByStatus[status].length}
+                  </span>
                 </div>
                 <SortableContext
                   id={status}
@@ -169,7 +187,7 @@ export function TaskBoard({ tasks, onTaskClick, onStatusChange }: TaskBoardProps
                       <SortableTask key={task.id} task={task} onClick={() => onTaskClick(task)} />
                     ))}
                     {tasksByStatus[status].length === 0 && (
-                      <div className="flex items-center justify-center h-32 text-sm text-slate-400 dark:text-slate-500 italic">
+                      <div className="flex items-center justify-center h-32 text-sm text-muted-foreground italic">
                         Drop tasks here
                       </div>
                     )}

@@ -12,12 +12,17 @@ import { TeamsQueryDto } from '@/common/dto/pagination-query.dto';
 import { TeamRepository } from './teams.repository';
 import { TeamMemberRole, UserRole } from '@prisma/client';
 import { assertRole, isManagerOrAbove } from '@/common/authorization/authorization';
+import { Permission, PermissionService } from '@/shared/permissions/permission.service';
 
 @Injectable()
 export class TeamsService {
-  constructor(private readonly teamRepository: TeamRepository) {}
+  constructor(
+    private readonly teamRepository: TeamRepository,
+    private readonly permissionService: PermissionService,
+  ) {}
 
   async createTeam(createTeamDto: CreateTeamDto, role: UserRole) {
+    this.permissionService.checkPermission(role, Permission.MANAGE_TEAM);
     assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER']);
     try {
       return await this.teamRepository.create(createTeamDto);
@@ -32,6 +37,7 @@ export class TeamsService {
   }
 
   async getTeam(id: string, role: UserRole) {
+    this.permissionService.checkPermission(role, Permission.READ_TEAM);
     assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'VIEWER']);
     const team = await this.teamRepository.findById(id);
     if (!team) {
@@ -62,6 +68,7 @@ export class TeamsService {
   }
 
   async updateTeam(id: string, updateTeamDto: UpdateTeamDto, role: UserRole) {
+    this.permissionService.checkPermission(role, Permission.MANAGE_TEAM);
     if (!isManagerOrAbove(role)) {
       throw new ForbiddenException('Only managers and administrators can update teams');
     }
@@ -79,6 +86,7 @@ export class TeamsService {
   }
 
   async deleteTeam(id: string, role: UserRole) {
+    this.permissionService.checkPermission(role, Permission.MANAGE_TEAM);
     if (!isManagerOrAbove(role)) {
       throw new ForbiddenException('Only managers and administrators can delete teams');
     }
@@ -88,6 +96,7 @@ export class TeamsService {
   }
 
   async addMemberToTeam(teamId: string, userId: string, role: UserRole, memberRole: TeamMemberRole = TeamMemberRole.MEMBER) {
+    this.permissionService.checkPermission(role, Permission.MANAGE_TEAM);
     if (!isManagerOrAbove(role)) {
       throw new ForbiddenException('Only managers and administrators can manage team members');
     }
@@ -102,6 +111,7 @@ export class TeamsService {
   }
 
   async updateMemberRole(teamId: string, userId: string, role: UserRole, memberRole: TeamMemberRole) {
+    this.permissionService.checkPermission(role, Permission.MANAGE_TEAM);
     if (!isManagerOrAbove(role)) {
       throw new ForbiddenException('Only managers and administrators can manage team members');
     }
@@ -116,6 +126,7 @@ export class TeamsService {
   }
 
   async removeMemberFromTeam(teamId: string, userId: string, role: UserRole) {
+    this.permissionService.checkPermission(role, Permission.MANAGE_TEAM);
     if (!isManagerOrAbove(role)) {
       throw new ForbiddenException('Only managers and administrators can manage team members');
     }

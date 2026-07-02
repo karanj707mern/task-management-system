@@ -20,10 +20,10 @@ interface TaskDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (taskId: string, data: Partial<Task>) => void;
-  isAdmin: boolean;
+  canEdit: boolean;
 }
 
-export function TaskDetailModal({ task, isOpen, onClose, onUpdate, isAdmin }: TaskDetailModalProps) {
+export function TaskDetailModal({ task, isOpen, onClose, onUpdate, canEdit }: TaskDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({ title: '', description: '', status: 'TODO' as TaskStatus, priority: 'MEDIUM' as TaskPriority });
   const [isSaving, setIsSaving] = useState(false);
@@ -101,19 +101,19 @@ export function TaskDetailModal({ task, isOpen, onClose, onUpdate, isAdmin }: Ta
   };
 
   const priorityColors: Record<TaskPriority, string> = {
-    LOW: 'text-emerald-600',
-    MEDIUM: 'text-amber-600',
-    HIGH: 'text-orange-600',
-    URGENT: 'text-red-600',
+    LOW: 'text-emerald-600 dark:text-emerald-400',
+    MEDIUM: 'text-amber-600 dark:text-amber-400',
+    HIGH: 'text-orange-600 dark:text-orange-400',
+    URGENT: 'text-red-600 dark:text-red-400',
   };
 
   const statusStyles: Record<string, string> = {
-    TODO: 'bg-muted text-muted-foreground',
-    IN_PROGRESS: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-    IN_REVIEW: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-    DONE: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
-    BLOCKED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-    CANCELLED: 'bg-muted text-muted-foreground',
+    TODO: 'bg-sky-100 text-sky-800 border border-sky-200 dark:bg-sky-900/40 dark:text-sky-200 dark:border-sky-700',
+    IN_PROGRESS: 'bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-700',
+    IN_REVIEW: 'bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-700',
+    DONE: 'bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-700',
+    BLOCKED: 'bg-rose-100 text-rose-800 border border-rose-200 dark:bg-rose-900/40 dark:text-rose-200 dark:border-rose-700',
+    CANCELLED: 'bg-slate-200 text-slate-800 border border-slate-300 dark:bg-slate-800/60 dark:text-slate-200 dark:border-slate-600',
   };
 
   if (!isOpen || !task) return null;
@@ -301,7 +301,7 @@ export function TaskDetailModal({ task, isOpen, onClose, onUpdate, isAdmin }: Ta
                     <div key={comment.id} className="p-3 rounded-lg border border-border bg-muted/20">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <div className="h-7 w-7 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white">
+                          <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
                             {comment.author?.name?.charAt(0) || '?'}
                           </div>
                           <div>
@@ -309,7 +309,7 @@ export function TaskDetailModal({ task, isOpen, onClose, onUpdate, isAdmin }: Ta
                             <p className="text-xs text-muted-foreground">{new Date(comment.createdAt).toLocaleString()}</p>
                           </div>
                         </div>
-                        {isAdmin && (
+                        {canEdit && (
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteComment(comment.id)}>
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -402,7 +402,7 @@ export function TaskDetailModal({ task, isOpen, onClose, onUpdate, isAdmin }: Ta
             </>
           ) : (
             <>
-              {isAdmin && <Button onClick={() => setIsEditing(true)}>Edit</Button>}
+              {canEdit && <Button onClick={() => setIsEditing(true)}>Edit</Button>}
               <Button variant="ghost" onClick={onClose}>Close</Button>
             </>
           )}

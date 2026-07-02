@@ -87,22 +87,22 @@ export function cn(...classes: unknown[]): string {
 
 export function getStatusColor(status: TaskStatus): string {
   const colors: Record<TaskStatus, string> = {
-    TODO: 'bg-gray-100 text-gray-700 border-gray-200',
-    IN_PROGRESS: 'bg-blue-100 text-blue-700 border-blue-200',
-    IN_REVIEW: 'bg-amber-100 text-amber-700 border-amber-200',
-    DONE: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    BLOCKED: 'bg-red-100 text-red-700 border-red-200',
-    CANCELLED: 'bg-slate-100 text-slate-700 border-slate-200',
+    TODO: 'bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/40 dark:text-sky-200 dark:border-sky-700',
+    IN_PROGRESS: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-200 dark:border-blue-700',
+    IN_REVIEW: 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-700',
+    DONE: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-700',
+    BLOCKED: 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/40 dark:text-rose-200 dark:border-rose-700',
+    CANCELLED: 'bg-slate-200 text-slate-800 border-slate-300 dark:bg-slate-800/60 dark:text-slate-200 dark:border-slate-600',
   };
   return colors[status];
 }
 
 export function getPriorityColor(priority: TaskPriority): string {
   const colors: Record<TaskPriority, string> = {
-    LOW: 'text-emerald-600',
-    MEDIUM: 'text-amber-600',
-    HIGH: 'text-orange-600',
-    URGENT: 'text-red-600',
+    LOW: 'text-emerald-600 dark:text-emerald-400',
+    MEDIUM: 'text-amber-600 dark:text-amber-400',
+    HIGH: 'text-orange-600 dark:text-orange-400',
+    URGENT: 'text-red-600 dark:text-red-400',
   };
   return colors[priority];
 }

@@ -3,21 +3,25 @@ import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { TaskStatus, LinkType } from '@prisma/client';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
+import { ArchiveTaskDto } from './dto/archive-task.dto';
 import { UserRole } from '@prisma/client';
-import { assertRole, isManagerOrAbove } from '@/common/authorization/authorization';
+import { assertRole, isManagerOrAbove, canDeleteResource, canArchiveResource } from '@/common/authorization/authorization';
 import { TasksQueryDto } from '@/common/dto/pagination-query.dto';
 import { DomainEventEmitter } from '../../events/emitters/domain-event.emitter';
+import { Permission, PermissionService } from '@/shared/permissions/permission.service';
 
 @Injectable()
 export class TasksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: DomainEventEmitter,
+    private readonly permissionService: PermissionService,
   ) {}
 
   async create(dto: CreateTaskDto, userId: string, role: UserRole) {
+    this.permissionService.checkPermission(role, Permission.CREATE_TASK);
     if (!isManagerOrAbove(role)) {
-      throw new ForbiddenException('Only managers and administrators can create tasks');
+      dto.assigneeId = userId;
     }
 
     const project = await this.prisma.project.findUnique({
@@ -98,6 +102,7 @@ export class TasksService {
   }
 
   async findAll(userId: string, role: UserRole, query?: TasksQueryDto) {
+    this.permissionService.checkPermission(role, Permission.READ_TASK);
     assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'VIEWER']);
 
     const baseWhere = isManagerOrAbove(role)
@@ -168,6 +173,7 @@ export class TasksService {
   }
 
   async getBoard(userId: string, role: UserRole, projectId?: string, sprintId?: string) {
+    this.permissionService.checkPermission(role, Permission.READ_TASK);
     assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'VIEWER']);
 
     const baseWhere: Record<string, unknown> = {};
@@ -199,6 +205,7 @@ export class TasksService {
   }
 
   async findOne(id: string, userId: string, role: UserRole) {
+    this.permissionService.checkPermission(role, Permission.READ_TASK);
     assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'VIEWER']);
     const task = await this.prisma.task.findUnique({
       where: isManagerOrAbove(role)
@@ -247,6 +254,7 @@ export class TasksService {
   }
 
   async updateStatus(id: string, status: TaskStatus, userId: string, role: UserRole) {
+    this.permissionService.checkPermission(role, Permission.UPDATE_TASK);
     const task = await this.findOne(id, userId, role);
     if (!isManagerOrAbove(role) && task.assigneeId !== userId && task.createdById !== userId) {
       throw new ForbiddenException('You can only update tasks assigned to you');
@@ -291,7 +299,8 @@ export class TasksService {
   }
 
   async update(id: string, dto: UpdateTaskDto, userId: string, role: UserRole) {
-    const task = await this.findOne(id, userId, role);
+    this.permissionService.checkPermission(role, Permission.UPDATE_TASK);
+    await this.findOne(id, userId, role);
 
     const updated = await this.prisma.task.update({
       where: { id },
@@ -351,8 +360,8 @@ export class TasksService {
   }
 
   async remove(id: string, userId: string, role: UserRole) {
-    if (!isManagerOrAbove(role)) {
-      throw new ForbiddenException('Only managers and administrators can delete tasks');
+    if (!canDeleteResource(role)) {
+      throw new ForbiddenException('Only administrators can permanently delete tasks');
     }
     await this.findOne(id, userId, role);
 
@@ -363,6 +372,47 @@ export class TasksService {
     return {
       message: 'Task deleted successfully',
     };
+  }
+
+  async archive(id: string, dto: ArchiveTaskDto, userId: string, role: UserRole) {
+    if (!canArchiveResource(role)) {
+      throw new ForbiddenException('Only managers and administrators can archive tasks');
+    }
+    const task = await this.findOne(id, userId, role);
+
+    const updated = await this.prisma.task.update({
+      where: { id },
+      data: { status: dto.status },
+      include: {
+        assignee: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+          },
+        },
+        project: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    await this.prisma.activity.create({
+      data: {
+        userId,
+        taskId: id,
+        action: 'archived',
+        entityType: 'task',
+        entityId: id,
+        metadata: { title: task.title },
+      },
+    });
+
+    return updated;
   }
 
   async linkTasks(taskId: string, linkedTaskId: string, linkType: LinkType) {

@@ -2,15 +2,21 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { ArchiveProjectDto } from './dto/archive-project.dto';
 import { ProjectsQueryDto } from '@/common/dto/pagination-query.dto';
 import { UserRole } from '@prisma/client';
-import { assertRole, isManagerOrAbove } from '@/common/authorization/authorization';
+import { assertRole, isManagerOrAbove, canDeleteResource, canArchiveResource } from '@/common/authorization/authorization';
+import { Permission, PermissionService } from '@/shared/permissions/permission.service';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly permissionService: PermissionService,
+  ) {}
 
   async create(dto: CreateProjectDto, role: UserRole) {
+    this.permissionService.checkPermission(role, Permission.CREATE_PROJECT);
     assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER']);
     return this.prisma.project.create({
       data: {
@@ -23,6 +29,7 @@ export class ProjectsService {
   }
 
   async findAll(query: ProjectsQueryDto, userId: string, role: UserRole) {
+    this.permissionService.checkPermission(role, Permission.READ_PROJECT);
     assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'VIEWER']);
 
     const where: Record<string, unknown> = {};
@@ -69,6 +76,7 @@ export class ProjectsService {
   }
 
   async findOne(id: string, role: UserRole) {
+    this.permissionService.checkPermission(role, Permission.READ_PROJECT);
     assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'VIEWER']);
     const project = await this.prisma.project.findUnique({
       where: {
@@ -84,6 +92,7 @@ export class ProjectsService {
   }
 
   async update(id: string, dto: UpdateProjectDto, role: UserRole) {
+    this.permissionService.checkPermission(role, Permission.UPDATE_PROJECT);
     if (!isManagerOrAbove(role)) {
       throw new ForbiddenException('Only managers and administrators can update projects');
     }
@@ -98,8 +107,8 @@ export class ProjectsService {
   }
 
   async remove(id: string, role: UserRole) {
-    if (!isManagerOrAbove(role)) {
-      throw new ForbiddenException('Only managers and administrators can delete projects');
+    if (!canDeleteResource(role)) {
+      throw new ForbiddenException('Only administrators can permanently delete projects');
     }
     await this.findOne(id, role);
 
@@ -107,6 +116,20 @@ export class ProjectsService {
       where: {
         id,
       },
+    });
+  }
+
+  async archive(id: string, dto: ArchiveProjectDto, role: UserRole) {
+    if (!canArchiveResource(role)) {
+      throw new ForbiddenException('Only managers and administrators can archive projects');
+    }
+    await this.findOne(id, role);
+
+    return this.prisma.project.update({
+      where: {
+        id,
+      },
+      data: { status: dto.status },
     });
   }
 }

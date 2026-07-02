@@ -116,7 +116,7 @@ export class GitHubIntegrationService {
     }
 
     // Find author: match by githubLogin first, then fall back to email
-    let author = await this.prisma.user.findFirst({
+    const author = await this.prisma.user.findFirst({
       where: {
         OR: [
           { githubLogin: payload.pull_request.user.login },
