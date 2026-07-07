@@ -19,6 +19,8 @@ export class BranchesService {
   ) {}
 
   async create(dto: CreateBranchDto, userId: string, role: UserRole) {
+    assertRole(role, ['SUPER_ADMIN', 'ADMIN', 'MANAGER']);
+
     const task = await this.prisma.task.findUnique({
       where: { id: dto.taskId },
     });
@@ -184,6 +186,11 @@ export class BranchesService {
       throw new NotFoundException('Branch not found');
     }
 
+    const canView = await this.hasUpdatePermission(branch, userId, role);
+    if (!canView) {
+      throw new ForbiddenException('You do not have permission to view this branch');
+    }
+
     return branch;
   }
 
@@ -222,7 +229,7 @@ export class BranchesService {
         skip,
         take: limit,
       }),
-      this.prisma.branch.count({ where: { taskId } }),
+      this.prisma.branch.count({ where }),
     ]);
 
     return {

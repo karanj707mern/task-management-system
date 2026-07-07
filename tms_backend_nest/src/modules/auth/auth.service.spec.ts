@@ -48,13 +48,24 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 
-  it('uses strict same-site cookies for tokens', () => {
+  it('uses cross-origin partitioned cookies for tokens', () => {
     const accessCookie = service.getAuthCookie('access-token');
     const refreshCookie = service.getRefreshCookie('refresh-token');
 
-    expect(accessCookie).toContain('SameSite=Strict');
-    expect(refreshCookie).toContain('SameSite=Strict');
+    expect(accessCookie).toContain('SameSite=None');
+    expect(refreshCookie).toContain('SameSite=None');
     expect(accessCookie).toContain('Secure');
     expect(refreshCookie).toContain('Secure');
+    expect(accessCookie).toContain('Partitioned');
+    expect(refreshCookie).toContain('Partitioned');
+  });
+
+  it('uses deterministic refresh token digests for database lookups', async () => {
+    const token = 'refresh-token';
+
+    await expect(service.hashRefreshToken(token)).resolves.toEqual(
+      await service.hashRefreshToken(token),
+    );
+    await expect(service.hashRefreshToken(token)).resolves.not.toEqual(token);
   });
 });

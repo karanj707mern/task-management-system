@@ -27,7 +27,7 @@ export class BranchesController {
   constructor(private readonly branchesService: BranchesService) {}
 
   @Post()
-  @Roles('SUPER_ADMIN', 'ADMIN', 'MANAGER', 'EMPLOYEE', 'VIEWER')
+  @Roles('SUPER_ADMIN', 'ADMIN', 'MANAGER')
   create(
     @Body() dto: CreateBranchDto,
     @GetUser('userId') userId: string,

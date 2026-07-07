@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import type { IPaginationQuery } from '@/common/types/common.types';
 import { ActivityService } from './activity.service';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';

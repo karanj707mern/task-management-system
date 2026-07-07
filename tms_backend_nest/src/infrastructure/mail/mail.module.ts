@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { MailerModule, MailerService } from '@nestjs-modules/mailer';
-import { BullModule, type Processor, type WorkerHost } from '@nestjs/bullmq';
+import { BullModule } from '@nestjs/bullmq';
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';

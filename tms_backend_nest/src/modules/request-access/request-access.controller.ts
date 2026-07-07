@@ -8,7 +8,6 @@ import { GetUser } from '@/common/decorators/get-user.decorator';
 import { UserRole } from '@prisma/client';
 import { ParseCuidPipe } from '@/common/pipes/parse-cuid.pipe';
 import { IPaginationQuery } from '@/common/types/common.types';
-import { RequestStatus } from '@prisma/client';
 
 @Controller('request-access')
 export class RequestAccessController {

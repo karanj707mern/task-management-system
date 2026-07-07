@@ -11,7 +11,7 @@ import { PrismaService } from '@/infrastructure/prisma/prisma.service';
 import { EmailService } from '@/infrastructure/mail/mail.service';
 import { UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import { UsersService } from '../users/users.service';
 
 import { LoginDto } from './dto/login.dto';
@@ -58,7 +58,6 @@ export class AuthService {
   }
 
   getCookie(name: string, value: string, maxAge: number): string {
-    const isProduction = this.configService.get('NODE_ENV') === 'production';
     // Note: Chrome requires Secure flag for Partitioned cookies (always add Secure for cross-origin)
     // SameSite=None requires Secure in modern browsers
     const cookieOptions = [
@@ -314,7 +313,7 @@ export class AuthService {
   }
 
   async hashRefreshToken(token: string): Promise<string> {
-    return bcrypt.hash(token, 10);
+    return createHash('sha256').update(token).digest('hex');
   }
 
   addSeconds(seconds: number): Date {
